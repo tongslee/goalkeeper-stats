@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Daniel GK Stats – Prototype v0.5.3 + Export</title>
+  <style>
+    :root {
+      --bg: #0c0f14; --panel: #121720; --muted: #8492a6; --text: #e8eefc; --accent: #3aa0ff;
+      --edge: #ffa23a; --edgeText: #2a1400; --shadow: 0 8px 30px rgba(0,0,0,.4);
+      --radius: 16px; --pad: 14px;
+    }
+    html, body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial; margin: 0; }
+    .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+    h1,h2,h3 { margin: 0 0 10px; }
+    .card { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--pad); }
+    .stack { display: grid; gap: 12px; }
+    label { font-size: 14px; color: var(--muted); }
+    input, select, button { font-size: 16px; border-radius: 12px; border: 1px solid #1f2733; background: #0f1520; color: var(--text); padding: 12px 14px; width: 100%; box-sizing: border-box; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pillbar { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill { padding: 10px 12px; background: #0f1520; border: 1px solid #1f2733; border-radius: 999px; cursor: pointer; user-select: none; }
+    .pill.active { outline: 2px solid var(--accent); background: #0b1220; }
+    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .bigbtn { padding: 20px; font-weight: 700; border: none; cursor: pointer; }
+    .bigbtn.saved { background: #0a2c1b; color: #b7ffd3; }
+    .bigbtn.conceded { background: #2b0a0a; color: #ffc2c2; }
+    .bigbtn.offtarget { background: #1f2330; color: #e5e7eb; }
+    .bigbtn.other { background: #101826; color: #c9dafe; }
+    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .toolbar .info { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-end; }
+    .modal.open { display: flex; }
+    .sheet { background: var(--panel); width: 100%; border-top-left-radius: 18px; border-top-right-radius: 18px; padding: 14px; max-height: 85vh; overflow: auto; }
+    .btn { padding: 12px; background: #0f1520; border: 1px solid #1f2733; border-radius: 12px; cursor: pointer; }
+    .btn.primary { background: var(--accent); color: #001e3c; border: none; font-weight: 700; }
+    .btn.ghost { background: transparent; border: 1px solid #273244; }
+
+    /* Goal grid */
+    .goalgrid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; background: #0b111b; padding: 8px; border-radius: 12px; border: 1px solid #1f2733; }
+    .cell { aspect-ratio: 1 / 1; display: grid; place-items: center; border-radius: 8px; background: #0f1622; color: #89a; font-size: 12px; border: 1px solid #1a2332; }
+    .cell.edge, .cell.barrow { background: rgba(255,162,58,.18); color: var(--edgeText); border-color: rgba(255,162,58,.35); }
+    .cell.post { background: rgba(255,162,58,.26); border-color: rgba(255,162,58,.45); }
+    .cell.active { outline: 2px solid var(--accent); color: #dff; }
+
+    /* Shot Origin grid */
+    .origin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (min-width: 420px) { .origin-grid { grid-template-columns: repeat(5, 1fr); } }
+    .origin-tile { padding: 10px; border: 1px solid #223048; border-radius: 10px; background: #0f1622; text-align: center; font-size: 13px; cursor: pointer; }
+    .origin-tile.active { outline: 2px solid var(--accent); background: #0b1220; }
+    .subhead { grid-column: 1 / -1; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* Stats strip */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+    .stat { background: #0f1520; padding: 10px; border-radius: 12px; border: 1px solid #1f2733; text-align: center; }
+    .stat .v { font-size: 20px; font-weight: 800; }
+    .stat .k { font-size: 12px; color: var(--muted); }
+
+    /* Summary */
+    .bars { display: grid; gap: 8px; }
+    .bar { background: #0f1520; border-radius: 999px; border: 1px solid #1f2733; overflow: hidden; height: 16px; }
+    .bar > div { height: 100%; background: var(--accent); width: 0%; }
+    .legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .heat { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; background: #0b111b; padding: 8px; border-radius: 12px; border: 1px solid #1f2733; }
+    .heat .hc { aspect-ratio: 1/1; border-radius: 6px; border: 1px solid #1a2332; position: relative; }
+    .heat .hc span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; color: #cbd5e1; mix-blend-mode: screen; }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Start screen -->
+    <div id="screen-start" class="card stack">
+      <h1>Start New Game</h1>
+      <div class="stack">
+        <div><label>Daniel’s Team</label>
+          <select id="team">
+            <option value="AIS MS White">AIS MS White</option>
+            <option value="CF U13 Elite">CF U13 Elite</option>
+            <option value="CF U15 Black">CF U15 Black</option>
+          </select></div>
+        <div><label>Opponent</label>
+          <input id="opponent" placeholder="e.g., Inter Atlanta 13B Royal" /></div>
+        <div class="row">
+          <div><label>Date/Time</label><input type="datetime-local" id="datetime" /></div>
+          <div><label>Pitch</label>
+            <div class="pillbar" id="pitch">
+              <div class="pill active" data-value="Grass" role="button" tabindex="0" aria-pressed="true">Grass</div>
+              <div class="pill" data-value="Turf" role="button" tabindex="0" aria-pressed="false">Turf</div>
+            </div>
+          </div>
+        </div>
+        <button id="startBtn" class="btn primary">Start Game</button>
+      </div>
+    </div>
+
+    <!-- Game screen -->
+    <div id="screen-game" class="card stack hidden">
+      <div class="toolbar">
+        <button id="endBtn" class="btn">End</button>
+        <button id="undoBtn" class="btn ghost">Undo</button>
+        <div class="info" id="gameInfo"></div>
+      </div>
+      <div class="grid-buttons">
+        <button class="bigbtn saved" data-res="Saved">Saved</button>
+        <button class="bigbtn conceded" data-res="Conceded">Conceded</button>
+        <button class="bigbtn offtarget" data-res="Off Target">Off Target</button>
+        <button class="bigbtn other" data-res="Other Action">Other Action</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="cSaves">0</div><div class="k">Saves</div></div>
+        <div class="stat"><div class="v" id="cConceded">0</div><div class="k">Conceded</div></div>
+        <div class="stat"><div class="v" id="cOff">0</div><div class="k">Off Target</div></div>
+        <div class="stat"><div class="v" id="cSavePct">0%</div><div class="k">Save %</div></div>
+      </div>
+    </div>
+
+    <!-- Summary screen -->
+    <div id="screen-summary" class="card stack hidden">
+      <h2>Game Summary</h2>
+      <div class="stats">
+        <div class="stat"><div class="v" id="tSaves">0</div><div class="k">Saves</div></div>
+        <div class="stat"><div class="v" id="tConceded">0</div><div class="k">Conceded</div></div>
+        <div class="stat"><div class="v" id="tOff">0</div><div class="k">Off Target</div></div>
+        <div class="stat"><div class="v" id="tSavePct">0%</div><div class="k">Save %</div></div>
+      </div>
+      <h3>Shot Origins</h3><div class="bars" id="origBars"></div>
+      <h3>Shot Types</h3><div class="bars" id="typeBars"></div>
+      <h3>Heatmap</h3><div class="heat" id="heat"></div>
+
+      <!-- ✅ Export JSON button added -->
+      <div class="stack">
+        <button id="exportJson" class="btn">Export JSON</button>
+        <button id="newGame" class="btn primary">Start New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="sheet">
+      <!-- Method -->
+      <div class="section"><label>Method</label>
+        <div class="pillbar" id="method">
+          <div class="pill" data-value="Claimed – In Position">Claimed – In Position</div>
+          <div class="pill" data-value="Claimed – Dived">Claimed – Dived</div>
+          <div class="pill" data-value="Blocked – Hand – In Position">Blocked – Hand – In Position</div>
+          <div class="pill" data-value="Blocked – Hand – Dived">Blocked – Hand – Dived</div>
+          <div class="pill" data-value="Blocked – Body – In Position">Blocked – Body – In Position</div>
+          <div class="pill" data-value="Blocked – Body – Dived">Blocked – Body – Dived</div>
+          <div class="pill" data-value="Blocked – Leg – In Position">Blocked – Leg – In Position</div>
+          <div class="pill" data-value="Blocked – Leg – Dived">Blocked – Leg – Dived</div>
+        </div>
+      </div>
+
+      <!-- Shot Origin -->
+      <div class="section"><label>Shot Origin</label>
+        <div id="origin" class="origin-grid">
+          <div class="subhead">6-yard box</div>
+          <div class="origin-tile" data-value="6yd – Left">6 L</div>
+          <div class="origin-tile" data-value="6yd – Center">6 C</div>
+          <div class="origin-tile" data-value="6yd – Right">6 R</div>
+          <div class="subhead">18-yard box</div>
+          <div class="origin-tile" data-value="18yd – LW">18 LW</div>
+          <div class="origin-tile" data-value="18yd – L">18 L</div>
+          <div class="origin-tile" data-value="18yd – C">18 C</div>
+          <div class="origin-tile" data-value="18yd – R">18 R</div>
+          <div class="origin-tile" data-value="18yd – RW">18 RW</div>
+          <div class="subhead">Outside</div>
+          <div class="origin-tile" data-value="Outside – LW">Out LW</div>
+          <div class="origin-tile" data-value="Outside – L">Out L</div>
+          <div class="origin-tile" data-value="Outside – C">Out C</div>
+          <div class="origin-tile" data-value="Outside – R">Out R</div>
+          <div class="origin-tile" data-value="Outside – RW">Out RW</div>
+          <div class="subhead">Corners / PK</div>
+          <div class="origin-tile" data-value="Corner – L">Corner L</div>
+          <div class="origin-tile" data-value="PK">PK</div>
+          <div class="origin-tile" data-value="Corner – R">Corner R</div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="section"><label>Location (Goal Grid)</label>
+        <div id="goalGrid" class="goalgrid"></div>
+        <div class="small muted">Rows: Over / Top Bar / Top / Mid / Low. Sides & posts highlighted.</div>
+      </div>
+
+      <!-- Shot Type -->
+      <div class="section"><label>Shot Type</label>
+        <div class="pillbar" id="shotType">
+          <div class="pill" data-value="Open Play">Open Play</div>
+          <div class="pill" data-value="Header">Header</div>
+          <div class="pill" data-value="Free Kick">Free Kick</div>
+          <div class="pill" data-value="1v1 – Challenged">1v1 – Challenged</div>
+          <div class="pill" data-value="1v1 – Stayed Back">1v1 – Stayed Back</div>
+          <div class="pill" data-value="Corner – Inswing">Corner – Inswing</div>
+          <div class="pill" data-value="Corner – Outswing">Corner – Outswing</div>
+          <div class="pill" data-value="PK – Regulation">PK – Regulation</div>
+          <div class="pill" data-value="PK – Shootout">PK – Shootout</div>
+        </div>
+      </div>
+
+      <div class="section" style="display:flex; gap:8px;">
+        <button id="saveDetail" class="btn primary">Save</button>
+        <button id="skipDetail" class="btn ghost">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+    let session=null; let pending=null;
+
+    const ORIG_KEYS=[ '6yd – Left','6yd – Center','6yd – Right','18yd – LW','18yd – L','18yd – C','18yd – R','18yd – RW','Outside – LW','Outside – L','Outside – C','Outside – R','Outside – RW','Corner – L','PK','Corner – R'];
+    const TYPE_KEYS=[ 'Open Play','Header','Free Kick','1v1 – Challenged','1v1 – Stayed Back','Corner – Inswing','Corner – Outswing','PK – Regulation','PK – Shootout'];
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      // Default datetime
+      const dt=$('#datetime'); if(dt){const d=new Date(),p=n=>String(n).padStart(2,'0'); dt.value=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;}
+
+      // Pitch toggle
+      const pitch=$('#pitch');
+      pitch.addEventListener('click', e=>{
+        const pill=e.target.closest('.pill'); if(!pill) return;
+        $$('#pitch .pill').forEach(p=>{p.classList.remove('active'); p.setAttribute('aria-pressed','false');});
+        pill.classList.add('active'); pill.setAttribute('aria-pressed','true');
+      });
+
+      // Buttons
+      $('#startBtn').addEventListener('click', startGame);
+      $('#endBtn').addEventListener('click', endGame);
+      $('#undoBtn').addEventListener('click', undoLast);
+      $('#newGame').addEventListener('click', ()=>show('screen-start'));
+
+      // ✅ Export JSON
+      const exportBtn = document.getElementById('exportJson');
+      if (exportBtn) exportBtn.addEventListener('click', () => {
+        const safe = session || { meta:{}, events:[] };
+        download('gk-session.json', JSON.stringify(safe, null, 2));
+      });
+
+      // Main in-game buttons
+      $$('.bigbtn').forEach(b=> b.addEventListener('click', () => handleMainTap(b.dataset.res)));
+
+      // Modal selections
+      $('#origin').addEventListener('click', e=>{ const el=e.target.closest('.origin-tile'); if(!el) return; $$('#origin .origin-tile').forEach(x=>x.classList.remove('active')); el.classList.add('active'); });
+      $('#shotType').addEventListener('click', e=>{ if(!e.target.classList.contains('pill')) return; $$('#shotType .pill').forEach(p=>p.classList.remove('active')); e.target.classList.add('active'); });
+      $('#method').addEventListener('click', e=>{ if(!e.target.classList.contains('pill')) return; $$('#method .pill').forEach(p=>p.classList.remove('active')); e.target.classList.add('active'); });
+
+      // Save / Skip
+      document.getElementById('saveDetail').addEventListener('click', saveDetail);
+      document.getElementById('skipDetail').addEventListener('click', skipDetail);
+
+      // Build goal grid
+      buildGoalGrid();
+    });
+
+    function startGame(){
+      session={meta:{
+        team:$('#team').value,
+        opponent:$('#opponent').value||'',
+        pitch:$('#pitch .pill.active')?.dataset.value||'Grass',
+        startedAt:Date.now()
+      }, events:[]};
+      $('#gameInfo').textContent=`${session.meta.team} vs ${session.meta.opponent||'—'} · ${session.meta.pitch}`;
+      show('screen-game'); refresh();
+    }
+
+    function endGame(){ showSummary(); }
+    function undoLast(){ if(session?.events?.length){ session.events.pop(); refresh(); } }
+    function handleMainTap(result){ pending={id:typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2), t:Date.now(), result, details:{}}; document.getElementById('modal').classList.add('open'); }
+
+    function saveDetail(){ if(!pending) return; pending.details=collectDetail(); session.events.push(pending); pending=null; document.getElementById('modal').classList.remove('open'); refresh(); }
+    function skipDetail(){ if(!pending) return; session.events.push(pending); pending=null; document.getElementById('modal').classList.remove('open'); refresh(); }
+
+    function collectDetail(){
+      const method = document.querySelector('#method .pill.active')?.dataset.value || '';
+      const origin = document.querySelector('#origin .origin-tile.active')?.dataset.value || '';
+      const shotType = document.querySelector('#shotType .pill.active')?.dataset.value || '';
+      const cell = document.querySelector('#goalGrid .cell.active');
+      let location = '';
+      if (cell) {
+        const r=['Over','Top Bar','Top','Mid','Low'][+cell.dataset.r];
+        const c=['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][+cell.dataset.c];
+        location = `${r} / ${c}`;
+      }
+      return { method, origin, shotType, location };
+    }
+
+    function buildGoalGrid(){
+      const labels=['L-OUT','L-POST','LEFT','L-CEN','CENTER','R-CEN','RIGHT','R-POST','R-OUT'];
+      const g=document.getElementById('goalGrid'); g.innerHTML='';
+      for(let r=0;r<5;r++){
+        for(let c=0;c<9;c++){
+          const d=document.createElement('div');
+          d.className='cell'; d.dataset.r=r; d.dataset.c=c;
+          if(c===0||c===1||c===7||c===8) d.classList.add('edge');
+          if(c===1||c===7) d.classList.add('post');
+          if(r===0||r===1) d.classList.add('barrow');
+          d.title=`${['Over','Top Bar','Top','Mid','Low'][r]} / ${labels[c]}`;
+          d.textContent=['Ov','TB','T','M','L'][r];
+          d.addEventListener('click', ()=>{ document.querySelectorAll('#goalGrid .cell').forEach(x=>x.classList.remove('active')); d.classList.add('active'); });
+          g.appendChild(d);
+        }
+      }
+    }
+
+    function refresh(){
+      const s=session.events.filter(e=>e.result==='Saved').length;
+      const c=session.events.filter(e=>e.result==='Conceded').length;
+      const o=session.events.filter(e=>e.result==='Off Target').length;
+      const on=s+c, pct=on?Math.round(s/on*100):0;
+      document.getElementById('cSaves').textContent=s;
+      document.getElementById('cConceded').textContent=c;
+      document.getElementById('cOff').textContent=o;
+      document.getElementById('cSavePct').textContent=pct+'%';
+    }
+
+    function showSummary(){
+      const s=session.events.filter(e=>e.result==='Saved').length;
+      const c=session.events.filter(e=>e.result==='Conceded').length;
+      const o=session.events.filter(e=>e.result==='Off Target').length;
+      const on=s+c, pct=on?Math.round(s/on*100):0;
+      document.getElementById('tSaves').textContent=s;
+      document.getElementById('tConceded').textContent=c;
+      document.getElementById('tOff').textContent=o;
+      document.getElementById('tSavePct').textContent=pct+'%';
+      buildBars('origBars', countBy(session.events, ev=>ev.details.origin, ORIG_KEYS));
+      buildBars('typeBars', countBy(session.events, ev=>ev.details.shotType, TYPE_KEYS));
+      buildHeat('heat', session.events);
+      show('screen-summary');
+    }
+
+    function buildBars(id,data){
+      const el=document.getElementById(id); el.innerHTML='';
+      const max=Math.max(1,...data.map(x=>x.count));
+      data.forEach(({label,count})=>{
+        const wrap=document.createElement('div');
+        const legend=document.createElement('div'); legend.className='legend';
+        legend.innerHTML=`<span>${label || '<i>Unspecified</i>'}</span><span>${count}</span>`;
+        const bar=document.createElement('div'); bar.className='bar';
+        const inner=document.createElement('div'); inner.style.width=`${(count/max)*100}%`;
+        bar.appendChild(inner); wrap.appendChild(legend); wrap.appendChild(bar);
+        el.appendChild(wrap);
+      });
+    }
+
+    function countBy(arr, fn, keys){
+      const m=new Map();
+      arr.forEach(a=>{ const k=fn(a)||''; m.set(k,(m.get(k)||0)+1); });
+      const rows=[]; (keys||Array.from(m.keys())).forEach(k=>rows.push({label:k,count:m.get(k)||0}));
+      if(!keys) rows.push({label:'',count:m.get('')||0});
+      return rows;
+    }
+
+    function buildHeat(id,events){
+      const el=document.getElementById(id); el.innerHTML='';
+      const counts=Array.from({length:5},()=>Array(9).fill(0));
+      const mapR={Over:0,'Top Bar':1,Top:2,Mid:3,Low:4};
+      const mapC={'Left Outside':0,'Left Post':1,'Left':2,'Left Center':3,'Center':4,'Right Center':5,'Right':6,'Right Post':7,'Right Outside':8};
+      events.forEach(ev=>{
+        const loc=ev.details.location; if(!loc) return;
+        const [row,col]=loc.split(' / ').map(s=>s.trim());
+        const r=mapR[row], c=mapC[col]; if(r==null||c==null) return;
+        counts[r][c]++;
+      });
+      const max=Math.max(1,...counts.flat());
+      for(let r=0;r<5;r++){
+        for(let c=0;c<9;c++){
+          const v=counts[r][c];
+          const d=document.createElement('div'); d.className='hc';
+          const isEdge=(c===0||c===1||c===7||c===8||r===0||r===1);
+          const a=0.10 + (v/max)*0.55;
+          d.style.background=isEdge?`rgba(255,160,58,${a})`:`rgba(58,160,255,${a})`;
+          const s=document.createElement('span'); s.textContent=v||'';
+          d.appendChild(s); el.appendChild(d);
+        }
+      }
+    }
+
+    function show(id){
+      ['screen-start','screen-game','screen-summary'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    // helper: download text as a file
+    function download(filename, text){
+      const a=document.createElement('a');
+      a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(text);
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  </script>
+</body>
+</html>
