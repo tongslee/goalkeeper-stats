@@ -1,96 +1,434 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Daniel GK Stats – Prototype v0.5.3 + Export</title>
   <style>
     :root {
-      --bg: #0c0f14; --panel: #121720; --muted: #8492a6; --text: #e8eefc; --accent: #3aa0ff;
-      --edge: #ffa23a; --edgeText: #2a1400; --shadow: 0 8px 30px rgba(0,0,0,.4);
-      --radius: 16px; --pad: 14px;
+      --bg: #0c0f14;
+      --panel: #121720;
+      --muted: #8492a6;
+      --text: #e8eefc;
+      --accent: #3aa0ff;
+      --edge: #ffa23a;
+      --edgeText: #2a1400;
+      --shadow: 0 8px 30px rgba(0, 0, 0, .4);
+      --radius: 16px;
+      --pad: 14px;
     }
-    html, body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial; margin: 0; }
-    .container { max-width: 720px; margin: 0 auto; padding: 16px; }
-    h1,h2,h3 { margin: 0 0 10px; }
-    .card { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--pad); }
-    .stack { display: grid; gap: 12px; }
-    label { font-size: 14px; color: var(--muted); }
-    input, select, button { font-size: 16px; border-radius: 12px; border: 1px solid #1f2733; background: #0f1520; color: var(--text); padding: 12px 14px; width: 100%; box-sizing: border-box; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .pillbar { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pill { padding: 10px 12px; background: #0f1520; border: 1px solid #1f2733; border-radius: 999px; cursor: pointer; user-select: none; }
-    .pill.active { outline: 2px solid var(--accent); background: #0b1220; }
-    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .bigbtn { padding: 20px; font-weight: 700; border: none; cursor: pointer; }
-    .bigbtn.saved { background: #0a2c1b; color: #b7ffd3; }
-    .bigbtn.conceded { background: #2b0a0a; color: #ffc2c2; }
-    .bigbtn.offtarget { background: #1f2330; color: #e5e7eb; }
-    .bigbtn.other { background: #101826; color: #c9dafe; }
-    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .toolbar .btn { flex-basis: 48%; flex-grow: 1;}
-    .toolbar .info { color: var(--muted); font-size: 15px; font-weight: bold; text-align: center; margin-left: auto; flex-basis: 100%; flex-grow: 1; }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0 0 10px;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--pad);
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input,
+    select,
+    button {
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+      background: #0f1520;
+      color: var(--text);
+      padding: 12px 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .pillbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 10px 12px;
+      background: #0f1520;
+      border: 1px solid #1f2733;
+      border-radius: 999px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .pill.active {
+      outline: 2px solid var(--accent);
+      background: #0b1220;
+    }
+
+    .grid-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .bigbtn {
+      padding: 20px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+
+    .bigbtn.saved {
+      background: #0a2c1b;
+      color: #b7ffd3;
+    }
+
+    .bigbtn.conceded {
+      background: #2b0a0a;
+      color: #ffc2c2;
+    }
+
+    .bigbtn.offtarget {
+      background: #1f2330;
+      color: #e5e7eb;
+    }
+
+    .bigbtn.other {
+      background: #101826;
+      color: #c9dafe;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar .btn {
+      flex-basis: 48%;
+      flex-grow: 1;
+    }
+
+    .toolbar .info {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: bold;
+      text-align: center;
+      margin-left: auto;
+      flex-basis: 100%;
+      flex-grow: 1;
+    }
 
     /* Modal */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-end; }
-    .modal.open { display: flex; }
-    .sheet { background: var(--panel); width: 100%; border-top-left-radius: 18px; border-top-right-radius: 18px; padding: 14px; max-height: 85vh; overflow: auto; }
-    .btn { padding: 12px; background: #0f1520; border: 1px solid #1f2733; border-radius: 12px; cursor: pointer; }
-    .btn.primary { background: var(--accent); color: #001e3c; border: none; font-weight: 700; }
-    .btn.ghost { background: transparent; border: 1px solid #273244; }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      display: none;
+      align-items: flex-end;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .sheet {
+      background: var(--panel);
+      width: 100%;
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      padding: 14px;
+      max-height: 85vh;
+      overflow: auto;
+    }
+
+    .btn {
+      padding: 12px;
+      background: #0f1520;
+      border: 1px solid #1f2733;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #001e3c;
+      border: none;
+      font-weight: 700;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      border: 1px solid #273244;
+    }
 
     /* Goal grid */
-    .goalgrid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; background: #0b111b; padding: 8px; border-radius: 12px; border: 1px solid #1f2733; }
-    .cell { aspect-ratio: 1 / 1; display: grid; place-items: center; border-radius: 8px; background: #0f1622; color: #89a; font-size: 12px; border: 1px solid #1a2332; }
-    .cell.edge, .cell.barrow { background: rgba(255,162,58,.18); color: var(--edgeText); border-color: rgba(255,162,58,.35); }
-    .cell.post { background: rgba(255,162,58,.26); border-color: rgba(255,162,58,.45); }
-    .cell.active { outline: 2px solid var(--accent); color: #dff; }
+    .goalgrid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 6px;
+      background: #0b111b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #0f1622;
+      color: #89a;
+      font-size: 12px;
+      border: 1px solid #1a2332;
+    }
+
+    .cell.edge,
+    .cell.barrow {
+      background: rgba(255, 162, 58, .18);
+      color: var(--edgeText);
+      border-color: rgba(255, 162, 58, .35);
+    }
+
+    .cell.post {
+      background: rgba(255, 162, 58, .26);
+      border-color: rgba(255, 162, 58, .45);
+    }
+
+    .cell.active {
+      outline: 2px solid var(--accent);
+      color: #dff;
+    }
 
     /* Shot Origin grid */
-    .origin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    @media (min-width: 420px) { .origin-grid { grid-template-columns: repeat(5, 1fr); } }
-    .origin-tile { padding: 10px; border: 1px solid #223048; border-radius: 10px; background: #0f1622; text-align: center; font-size: 13px; cursor: pointer; }
-    .origin-tile.active { outline: 2px solid var(--accent); background: #0b1220; }
-    .subhead { grid-column: 1 / -1; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .origin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    @media (min-width: 420px) {
+      .origin-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+
+    .origin-tile {
+      padding: 10px;
+      border: 1px solid #223048;
+      border-radius: 10px;
+      background: #0f1622;
+      text-align: center;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .origin-tile.active {
+      outline: 2px solid var(--accent);
+      background: #0b1220;
+    }
+
+    .subhead {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
 
     /* Stats strip */
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
-    .stat { background: #0f1520; padding: 10px; border-radius: 12px; border: 1px solid #1f2733; text-align: center; }
-    .stat .v { font-size: 20px; font-weight: 800; }
-    .stat .k { font-size: 12px; color: var(--muted); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      background: #0f1520;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+      text-align: center;
+    }
+
+    .stat .v {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+    }
 
     /* Summary */
-    .bars { display: grid; gap: 8px; }
-    .bar { background: #0f1520; border-radius: 999px; border: 1px solid #1f2733; overflow: hidden; height: 16px; }
-    .bar > div { height: 100%; background: var(--accent); width: 0%; }
-    .legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
-    .heat { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; background: #0b111b; padding: 8px; border-radius: 12px; border: 1px solid #1f2733; }
-    .heat .hc { aspect-ratio: 1/1; border-radius: 6px; border: 1px solid #1a2332; position: relative; }
-    .heat .hc span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; color: #cbd5e1; mix-blend-mode: screen; }
+    .bars {
+      display: grid;
+      gap: 8px;
+    }
 
-    .muted { color: var(--muted); }
-    .small { font-size: 12px; }
-    .hidden { display: none !important; }
+    .bar {
+      background: #0f1520;
+      border-radius: 999px;
+      border: 1px solid #1f2733;
+      overflow: hidden;
+      height: 16px;
+    }
+
+    .bar>div {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* Shot Origin heatmap: 3×7 grid */
+    .heat7 {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      background: #0b111b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+    }
+
+    .heat7 .hc {
+      aspect-ratio: 1/1;
+      border-radius: 6px;
+      border: 1px solid #1a2332;
+      position: relative;
+    }
+
+    .heat7 .hc span {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      mix-blend-mode: screen;
+    }
+
+    .heat {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 4px;
+      background: #0b111b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+    }
+
+    .heat .hc {
+      aspect-ratio: 1/1;
+      border-radius: 6px;
+      border: 1px solid #1a2332;
+      position: relative;
+    }
+
+    .heat .hc span {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      mix-blend-mode: screen;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     /* --- Small phones: iPhone 12 Pro width (<= 400px) --- */
     @media (max-width: 400px) {
-      .container { padding: 12px; }
-      .card { padding: 12px; border-radius: 12px; }
-      h1 { font-size: 28px; line-height: 1.2; }
+      .container {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 12px;
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+      }
 
       /* Stack fields vertically so nothing collides */
-      .row { grid-template-columns: 1fr; }
+      .row {
+        grid-template-columns: 1fr;
+      }
 
       /* Make Grass/Turf sit nicely in two equal pills */
-      #pitch .pillbar { gap: 8px; }
-      #pitch .pill { flex: 1 1 48%; text-align: center; }
+      #pitch .pillbar {
+        gap: 8px;
+      }
+
+      #pitch .pill {
+        flex: 1 1 48%;
+        text-align: center;
+      }
 
       /* Prevent odd overflows from native inputs/buttons */
-      input, select, button { max-width: 100%; }
+      input,
+      select,
+      button {
+        max-width: 100%;
+      }
     }
 
     /* Shot Origin: 3×7 grid styled like Goal Grid */
-    .origin7{
-      display:grid;
+    .origin7 {
+      display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 6px;
       background: #0b111b;
@@ -98,7 +436,8 @@
       border-radius: 12px;
       border: 1px solid #1f2733;
     }
-    .origin7 .ocell{
+
+    .origin7 .ocell {
       aspect-ratio: 1/1;
       display: grid;
       place-items: center;
@@ -111,62 +450,137 @@
       cursor: pointer;
       user-select: none;
     }
+
     /* Highlighted zones */
     .origin7 .ocell[data-value*="6yd"] {
       background: rgba(255, 100, 100, 0.25);
     }
+
     .origin7 .ocell[data-value*="18yd"] {
       background: rgba(255, 255, 100, 0.25);
     }
+
     .origin7 .ocell[data-value="Corner – L"],
     .origin7 .ocell[data-value="Corner – R"] {
       background: rgba(100, 200, 100, 0.3);
-}
+    }
 
-/* Keep active highlight on top */
-.origin7 .ocell.active {
-  outline: 2px solid var(--accent);
-  background: #0b1220 !important;
-}
+    /* Keep active highlight on top */
+    .origin7 .ocell.active {
+      outline: 2px solid var(--accent);
+      background: #0b1220 !important;
+    }
 
-    .origin7 .ocell.active{
+    .origin7 .ocell.active {
       outline: 2px solid var(--accent);
       background: #0b1220;
     }
 
     /* -------- Placement (matches your diagram) -------- */
     /* Row 1: 6-yard (centered; L/R a bit wider) */
-    .l6 { grid-column:3 / span 2; grid-row:1; }
-    .c6 { grid-column:5;           grid-row:1; }
-    .r6 { grid-column:6 / span 2;  grid-row:1; }
+    .l6 {
+      grid-column: 3 / span 2;
+      grid-row: 1;
+    }
+
+    .c6 {
+      grid-column: 5;
+      grid-row: 1;
+    }
+
+    .r6 {
+      grid-column: 6 / span 2;
+      grid-row: 1;
+    }
 
     /* Row 2: 18-yard */
-    .lw18 { grid-column:2;           grid-row:2; }
-    .l18  { grid-column:3 / span 2;  grid-row:2; }
-    .c18  { grid-column:5;           grid-row:2; }
-    .r18  { grid-column:6 / span 2;  grid-row:2; }
-    .rw18 { grid-column:8;           grid-row:2; }
+    .lw18 {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .l18 {
+      grid-column: 3 / span 2;
+      grid-row: 2;
+    }
+
+    .c18 {
+      grid-column: 5;
+      grid-row: 2;
+    }
+
+    .r18 {
+      grid-column: 6 / span 2;
+      grid-row: 2;
+    }
+
+    .rw18 {
+      grid-column: 8;
+      grid-row: 2;
+    }
 
     /* Row 3: outside + corners (wide L/R) */
-    .cl { grid-column:1;           grid-row:3; }
-    .lw { grid-column:2;           grid-row:3; }
-    .l  { grid-column:3 / span 2;  grid-row:3; }
-    .c  { grid-column:5;           grid-row:3; }
-    .r  { grid-column:6 / span 2;  grid-row:3; }
-    .rw { grid-column:8;           grid-row:3; }
-    .cr { grid-column:9;           grid-row:3; }
+    .cl {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .lw {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    .l {
+      grid-column: 3 / span 2;
+      grid-row: 3;
+    }
+
+    .c {
+      grid-column: 5;
+      grid-row: 3;
+    }
+
+    .r {
+      grid-column: 6 / span 2;
+      grid-row: 3;
+    }
+
+    .rw {
+      grid-column: 8;
+      grid-row: 3;
+    }
+
+    .cr {
+      grid-column: 9;
+      grid-row: 3;
+    }
 
     /* small phones */
-    @media (max-width: 400px){
-      .origin-rect{ grid-template-rows: 50px 56px 56px; }
-      .origin-rect .pk{ width:40px; height:26px; line-height:26px; }
+    @media (max-width: 400px) {
+      .origin-rect {
+        grid-template-rows: 50px 56px 56px;
+      }
+
+      .origin-rect .pk {
+        width: 40px;
+        height: 26px;
+        line-height: 26px;
+      }
     }
 
     /* General overflow guards (helps Safari) */
-    html, body { overflow-x: hidden; }
-    .stack, .row { min-width: 0; }
+    html,
+    body {
+      overflow-x: hidden;
+    }
+
+    .stack,
+    .row {
+      min-width: 0;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <!-- Start screen -->
@@ -208,10 +622,22 @@
         <button class="bigbtn other" data-res="Other Action">Other Action</button>
       </div>
       <div class="stats">
-        <div class="stat"><div class="v" id="cSaves">0</div><div class="k">Saves</div></div>
-        <div class="stat"><div class="v" id="cConceded">0</div><div class="k">Conceded</div></div>
-        <div class="stat"><div class="v" id="cOff">0</div><div class="k">Off Target</div></div>
-        <div class="stat"><div class="v" id="cSavePct">0%</div><div class="k">Save %</div></div>
+        <div class="stat">
+          <div class="v" id="cSaves">0</div>
+          <div class="k">Saves</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="cConceded">0</div>
+          <div class="k">Conceded</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="cOff">0</div>
+          <div class="k">Off Target</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="cSavePct">0%</div>
+          <div class="k">Save %</div>
+        </div>
       </div>
     </div>
 
@@ -219,14 +645,31 @@
     <div id="screen-summary" class="card stack hidden">
       <h2>Game Summary</h2>
       <div class="stats">
-        <div class="stat"><div class="v" id="tSaves">0</div><div class="k">Saves</div></div>
-        <div class="stat"><div class="v" id="tConceded">0</div><div class="k">Conceded</div></div>
-        <div class="stat"><div class="v" id="tOff">0</div><div class="k">Off Target</div></div>
-        <div class="stat"><div class="v" id="tSavePct">0%</div><div class="k">Save %</div></div>
+        <div class="stat">
+          <div class="v" id="tSaves">0</div>
+          <div class="k">Saves</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tConceded">0</div>
+          <div class="k">Conceded</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tOff">0</div>
+          <div class="k">Off Target</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tSavePct">0%</div>
+          <div class="k">Save %</div>
+        </div>
       </div>
-      <h3>Shot Origins</h3><div class="bars" id="origBars"></div>
-      <h3>Shot Types</h3><div class="bars" id="typeBars"></div>
-      <h3>Heatmap</h3><div class="heat" id="heat"></div>
+      <h3>Shot Origins</h3>
+      <div class="bars" id="origBars"></div>
+      <h3>Shot Types</h3>
+      <div class="bars" id="typeBars"></div>
+      <h3>Shot Origin Heatmap</h3>
+      <div class="heat7" id="originHeat"></div>
+      <h3>Heatmap</h3>
+      <div class="heat" id="heat"></div>
 
       <!-- ✅ Export JSON button added -->
       <div class="stack">
@@ -348,63 +791,89 @@
   </div>
 
   <script>
-    const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
-    let session=null; let pending=null;
+    const $ = s => document.querySelector(s),
+      $$ = s => Array.from(document.querySelectorAll(s));
+    let session = null;
+    let pending = null;
 
-    const ORIG_KEYS=[ '6yd – Left','6yd – Center','6yd – Right','18yd – LW','18yd – L','18yd – C','18yd – R','18yd – RW','Outside – LW','Outside – L','Outside – C','Outside – R','Outside – RW','Corner – L','PK','Corner – R'];
-    const TYPE_KEYS=[ 'Open Play','Header','Free Kick','1v1 – Challenged','1v1 – Stayed Back','Corner – Inswing','Corner – Outswing','PK – Regulation','PK – Shootout'];
+    const ORIG_KEYS = ['6yd – Left', '6yd – Center', '6yd – Right', '18yd – LW', '18yd – L', '18yd – C', '18yd – R',
+      '18yd – RW', 'Outside – LW', 'Outside – L', 'Outside – C', 'Outside – R', 'Outside – RW', 'Corner – L', 'PK',
+      'Corner – R'
+    ];
+    const TYPE_KEYS = ['Open Play', 'Header', 'Free Kick', '1v1 – Challenged', '1v1 – Stayed Back', 'Corner – Inswing',
+      'Corner – Outswing', 'PK – Regulation', 'PK – Shootout'
+    ];
 
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', () => {
       // Default datetime
-      const dt=$('#datetime'); if(dt){const d=new Date(),p=n=>String(n).padStart(2,'0'); dt.value=`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;}
+      const dt = $('#datetime');
+      if (dt) {
+        const d = new Date(),
+          p = n => String(n).padStart(2, '0');
+        dt.value =
+          `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
 
       // Pitch toggle
-      const pitch=$('#pitch');
-      pitch.addEventListener('click', e=>{
-        const pill=e.target.closest('.pill'); if(!pill) return;
-        $$('#pitch .pill').forEach(p=>{p.classList.remove('active'); p.setAttribute('aria-pressed','false');});
-        pill.classList.add('active'); pill.setAttribute('aria-pressed','true');
+      const pitch = $('#pitch');
+      pitch.addEventListener('click', e => {
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+        $$('#pitch .pill').forEach(p => {
+          p.classList.remove('active');
+          p.setAttribute('aria-pressed', 'false');
+        });
+        pill.classList.add('active');
+        pill.setAttribute('aria-pressed', 'true');
       });
 
       // Buttons
       $('#startBtn').addEventListener('click', startGame);
       $('#endBtn').addEventListener('click', endGame);
       $('#undoBtn').addEventListener('click', undoLast);
-      $('#newGame').addEventListener('click', ()=>show('screen-start'));
+      $('#newGame').addEventListener('click', () => show('screen-start'));
 
       // ✅ Export JSON
       const exportBtn = document.getElementById('exportJson');
       if (exportBtn) exportBtn.addEventListener('click', () => {
-        const safe = session || { meta:{}, events:[] };
+        const safe = session || {
+          meta: {},
+          events: []
+        };
         download('gk-session.json', JSON.stringify(safe, null, 2));
       });
 
       // Main in-game buttons
-      $$('.bigbtn').forEach(b=> b.addEventListener('click', () => handleMainTap(b.dataset.res)));
+      $$('.bigbtn').forEach(b => b.addEventListener('click', () => handleMainTap(b.dataset.res)));
 
       // Modal selections
       // Shot Origin (3×7 grid)
-      document.getElementById('origin7').addEventListener('click', e=>{
-        const el = e.target.closest('.ocell'); if (!el) return;
-        document.querySelectorAll('#origin7 .ocell').forEach(x=>x.classList.remove('active'));
+      document.getElementById('origin7').addEventListener('click', e => {
+        const el = e.target.closest('.ocell');
+        if (!el) return;
+        document.querySelectorAll('#origin7 .ocell').forEach(x => x.classList.remove('active'));
         el.classList.add('active');
       });
 
-      $('#shotType').addEventListener('click', e=>{ if(!e.target.classList.contains('pill')) return; $$('#shotType .pill').forEach(p=>p.classList.remove('active')); e.target.classList.add('active'); });
-      ['method-claimed','method-hand','method-body','method-leg'].forEach(id=>{
+      $('#shotType').addEventListener('click', e => {
+        if (!e.target.classList.contains('pill')) return;
+        $$('#shotType .pill').forEach(p => p.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+      ['method-claimed', 'method-hand', 'method-body', 'method-leg'].forEach(id => {
         const el = document.getElementById(id);
-        el.addEventListener('click', e=>{
-          if(!e.target.classList.contains('pill')) return;
+        el.addEventListener('click', e => {
+          if (!e.target.classList.contains('pill')) return;
           // clear active only within this subgroup
-          el.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+          el.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
           e.target.classList.add('active');
         });
       });
 
       // Strength pill selection
-      $('#strength').addEventListener('click', e=>{
+      $('#strength').addEventListener('click', e => {
         if (!e.target.classList.contains('pill')) return;
-        $$('#strength .pill').forEach(p=>p.classList.remove('active'));
+        $$('#strength .pill').forEach(p => p.classList.remove('active'));
         e.target.classList.add('active');
       });
 
@@ -414,158 +883,317 @@
 
       // Build goal grid
       buildGoalGrid();
+
+      // Tag origin cells with row/col so heatmap can count exact taps
+      (function initOriginPositions() {
+        const cells = document.querySelectorAll('#origin7 .ocell');
+        cells.forEach((el, i) => {
+          const r = Math.floor(i / 7) + 1; // 1..3
+          const c = (i % 7) + 1; // 1..7
+          el.dataset.pos = `r${r}c${c}`;
+        });
+      })();
     });
 
-    function startGame(){
-      session={meta:{
-        team:$('#team').value,
-        opponent:$('#opponent').value||'',
-        pitch:$('#pitch .pill.active')?.dataset.value||'Grass',
-        startedAt:Date.now()
-      }, events:[]};
-      $('#gameInfo').textContent=`${session.meta.team} vs ${session.meta.opponent||'—'} · ${session.meta.pitch}`;
-      show('screen-game'); refresh();
+    function startGame() {
+      session = {
+        meta: {
+          team: $('#team').value,
+          opponent: $('#opponent').value || '',
+          pitch: $('#pitch .pill.active')?.dataset.value || 'Grass',
+          startedAt: Date.now()
+        },
+        events: []
+      };
+      $('#gameInfo').textContent = `${session.meta.team} vs ${session.meta.opponent||'—'} · ${session.meta.pitch}`;
+      show('screen-game');
+      refresh();
     }
 
-    function endGame(){ showSummary(); }
-    function undoLast(){ if(session?.events?.length){ session.events.pop(); refresh(); } }
-    function handleMainTap(result){
-  pending = {
-    id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)),
-    t: Date.now(),
-    result,
-    details: {}
-  };
-  // Set label at top of modal
-  const lbl = document.getElementById('resultLabel');
-  if (lbl) lbl.textContent = result.toUpperCase();
-  
-  document.getElementById('modal').classList.add('open');
-}
+    function endGame() {
+      showSummary();
+    }
 
-    function saveDetail(){ if(!pending) return; pending.details=collectDetail(); session.events.push(pending); pending=null; document.getElementById('modal').classList.remove('open'); refresh(); }
-    function skipDetail(){ if(!pending) return; session.events.push(pending); pending=null; document.getElementById('modal').classList.remove('open'); refresh(); }
+    function undoLast() {
+      if (session?.events?.length) {
+        session.events.pop();
+        refresh();
+      }
+    }
 
-    function collectDetail(){
-      const method = document.querySelector('.method-group .pill.active')?.dataset.value || '';
-      const origin = document.querySelector('#origin7 .ocell.active')?.dataset.value || '';
+    function handleMainTap(result) {
+      pending = {
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(
+          2)),
+        t: Date.now(),
+        result,
+        details: {}
+      };
+      // Set label at top of modal
+      const lbl = document.getElementById('resultLabel');
+      if (lbl) lbl.textContent = result.toUpperCase();
+
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function saveDetail() {
+      if (!pending) return;
+      pending.details = collectDetail();
+      session.events.push(pending);
+      pending = null;
+      document.getElementById('modal').classList.remove('open');
+      refresh();
+    }
+
+    function skipDetail() {
+      if (!pending) return;
+      session.events.push(pending);
+      pending = null;
+      document.getElementById('modal').classList.remove('open');
+      refresh();
+    }
+
+    function collectDetail() {
+      const method = document.querySelector('.method-group .pill.active')?.dataset.value ||
+        document.querySelector('#method .pill.active')?.dataset.value || '';
+      const oEl = document.querySelector('#origin7 .ocell.active');
+      const origin = oEl?.dataset.value || '';
+      const originPos = oEl?.dataset.pos || '';
       const shotType = document.querySelector('#shotType .pill.active')?.dataset.value || '';
       const strength = document.querySelector('#strength .pill.active')?.dataset.value || '';
+
       const cell = document.querySelector('#goalGrid .cell.active');
       let location = '';
       if (cell) {
-        const r=['Over','Top Bar','Top','Mid','Low'][+cell.dataset.r];
-        const c=['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][+cell.dataset.c];
+        const r = ['Over', 'Top Bar', 'Top', 'Mid', 'Low'][+cell.dataset.r];
+        const c = ['Left Outside', 'Left Post', 'Left', 'Left Center', 'Center', 'Right Center', 'Right', 'Right Post',
+          'Right Outside'
+        ][+cell.dataset.c];
         location = `${r} / ${c}`;
       }
-      return { method, origin, shotType, strength, location };
+      return {
+        method,
+        origin,
+        originPos,
+        shotType,
+        strength,
+        location
+      };
     }
 
-    function buildGoalGrid(){
-      const labels=['L-OUT','L-POST','LEFT','L-CEN','CENTER','R-CEN','RIGHT','R-POST','R-OUT'];
-      const g=document.getElementById('goalGrid'); g.innerHTML='';
-      for(let r=0;r<5;r++){
-        for(let c=0;c<9;c++){
-          const d=document.createElement('div');
-          d.className='cell'; d.dataset.r=r; d.dataset.c=c;
-          if(c===0||c===1||c===7||c===8) d.classList.add('edge');
-          if(c===1||c===7) d.classList.add('post');
-          if(r===0||r===1) d.classList.add('barrow');
-          d.title=`${['Over','Top Bar','Top','Mid','Low'][r]} / ${labels[c]}`;
-          d.textContent=['Ov','TB','T','M','L'][r];
-          d.addEventListener('click', ()=>{ document.querySelectorAll('#goalGrid .cell').forEach(x=>x.classList.remove('active')); d.classList.add('active'); });
+    function buildOriginHeat(elId, events){
+      const el = document.getElementById(elId);
+      el.innerHTML = '';
+
+      // 3×7 counts
+      const rows = 3, cols = 7;
+      const counts = Array.from({length: rows}, ()=>Array(cols).fill(0));
+
+      // Fallback mapping if some old events don’t have originPos
+      const labelToFirstPos = {
+        'Corner – L':'r1c1','18yd – LW':'r1c2','6yd – Left':'r1c3','6yd – Center':'r1c4','6yd – Right':'r1c5','18yd – RW':'r1c6','Corner – R':'r1c7',
+        'Outside – LW':'r2c1','18yd – L':'r2c3','18yd – C':'r2c4','18yd – R':'r2c5','Outside – RW':'r2c7',
+        'Outside – L':'r3c2','Outside – C':'r3c4','Outside – R':'r3c5'
+      };
+
+      // Count events
+      events.forEach(ev=>{
+        const pos = ev.details?.originPos || labelToFirstPos[ev.details?.origin || ''];
+        if (!pos) return;
+        const r = Number(pos[1]) - 1; // r1..r3 -> 0..2
+        const c = Number(pos[3]) - 1; // c1..c7 -> 0..6
+        if (r>=0 && r<rows && c>=0 && c<cols) counts[r][c]++;
+      });
+
+      const max = Math.max(1, ...counts.flat());
+
+      // helper to match grid color scheme
+      const zoneRGBA = (r,c,alpha) => {
+        // r,c are 0-based here
+        // 6-yard: row 1, cols 3..5 (1-based) => c=2..4 (0-based)
+        if (r===0 && (c===2 || c===3 || c===4)) return `rgba(255,100,100,${alpha})`;      // light red
+        // 18-yard: row 1 cols 2 & 6 (c=1 or 5) AND row 2 cols 2..6 (r=1, c=1..5)
+        if ((r===0 && (c===1 || c===5)) || (r===1 && (c>=1 && c<=5))) return `rgba(255,255,100,${alpha})`; // light yellow
+        // Corners: row 1 cols 1 & 7 (c=0 or 6)
+        if (r===0 && (c===0 || c===6)) return `rgba(100,200,100,${alpha})`;               // light green
+        // Outside (default): blue ramp
+        return `rgba(58,160,255,${alpha})`;
+      };
+
+      for (let r=0; r<rows; r++){
+        for (let c=0; c<cols; c++){
+          const v = counts[r][c];
+          const cell = document.createElement('div'); cell.className = 'hc';
+          const intensity = v / max;                        // 0..1
+          const a = 0.12 + intensity * 0.60;               // opacity ramp
+          cell.style.background = zoneRGBA(r,c,a);
+
+          const span = document.createElement('span'); span.textContent = v ? v : '';
+          cell.appendChild(span); el.appendChild(cell);
+        }
+      }
+    }
+
+    function buildGoalGrid() {
+      const labels = ['L-OUT', 'L-POST', 'LEFT', 'L-CEN', 'CENTER', 'R-CEN', 'RIGHT', 'R-POST', 'R-OUT'];
+      const g = document.getElementById('goalGrid');
+      g.innerHTML = '';
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 9; c++) {
+          const d = document.createElement('div');
+          d.className = 'cell';
+          d.dataset.r = r;
+          d.dataset.c = c;
+          if (c === 0 || c === 1 || c === 7 || c === 8) d.classList.add('edge');
+          if (c === 1 || c === 7) d.classList.add('post');
+          if (r === 0 || r === 1) d.classList.add('barrow');
+          d.title = `${['Over','Top Bar','Top','Mid','Low'][r]} / ${labels[c]}`;
+          d.textContent = ['Ov', 'TB', 'T', 'M', 'L'][r];
+          d.addEventListener('click', () => {
+            document.querySelectorAll('#goalGrid .cell').forEach(x => x.classList.remove('active'));
+            d.classList.add('active');
+          });
           g.appendChild(d);
         }
       }
     }
 
-    function refresh(){
-      const s=session.events.filter(e=>e.result==='Saved').length;
-      const c=session.events.filter(e=>e.result==='Conceded').length;
-      const o=session.events.filter(e=>e.result==='Off Target').length;
-      const on=s+c, pct=on?Math.round(s/on*100):0;
-      document.getElementById('cSaves').textContent=s;
-      document.getElementById('cConceded').textContent=c;
-      document.getElementById('cOff').textContent=o;
-      document.getElementById('cSavePct').textContent=pct+'%';
+    function refresh() {
+      const s = session.events.filter(e => e.result === 'Saved').length;
+      const c = session.events.filter(e => e.result === 'Conceded').length;
+      const o = session.events.filter(e => e.result === 'Off Target').length;
+      const on = s + c,
+        pct = on ? Math.round(s / on * 100) : 0;
+      document.getElementById('cSaves').textContent = s;
+      document.getElementById('cConceded').textContent = c;
+      document.getElementById('cOff').textContent = o;
+      document.getElementById('cSavePct').textContent = pct + '%';
     }
 
-    function showSummary(){
-      const s=session.events.filter(e=>e.result==='Saved').length;
-      const c=session.events.filter(e=>e.result==='Conceded').length;
-      const o=session.events.filter(e=>e.result==='Off Target').length;
-      const on=s+c, pct=on?Math.round(s/on*100):0;
-      document.getElementById('tSaves').textContent=s;
-      document.getElementById('tConceded').textContent=c;
-      document.getElementById('tOff').textContent=o;
-      document.getElementById('tSavePct').textContent=pct+'%';
-      buildBars('origBars', countBy(session.events, ev=>ev.details.origin, ORIG_KEYS));
-      buildBars('typeBars', countBy(session.events, ev=>ev.details.shotType, TYPE_KEYS));
+    function showSummary() {
+      const s = session.events.filter(e => e.result === 'Saved').length;
+      const c = session.events.filter(e => e.result === 'Conceded').length;
+      const o = session.events.filter(e => e.result === 'Off Target').length;
+      const on = s + c,
+        pct = on ? Math.round(s / on * 100) : 0;
+      document.getElementById('tSaves').textContent = s;
+      document.getElementById('tConceded').textContent = c;
+      document.getElementById('tOff').textContent = o;
+      document.getElementById('tSavePct').textContent = pct + '%';
+      buildBars('origBars', countBy(session.events, ev => ev.details.origin, ORIG_KEYS));
+      buildBars('typeBars', countBy(session.events, ev => ev.details.shotType, TYPE_KEYS));
+      buildOriginHeat('originHeat', session.events);
       buildHeat('heat', session.events);
       show('screen-summary');
     }
 
-    function buildBars(id,data){
-      const el=document.getElementById(id); el.innerHTML='';
-      const max=Math.max(1,...data.map(x=>x.count));
-      data.forEach(({label,count})=>{
-        const wrap=document.createElement('div');
-        const legend=document.createElement('div'); legend.className='legend';
-        legend.innerHTML=`<span>${label || '<i>Unspecified</i>'}</span><span>${count}</span>`;
-        const bar=document.createElement('div'); bar.className='bar';
-        const inner=document.createElement('div'); inner.style.width=`${(count/max)*100}%`;
-        bar.appendChild(inner); wrap.appendChild(legend); wrap.appendChild(bar);
+    function buildBars(id, data) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      const max = Math.max(1, ...data.map(x => x.count));
+      data.forEach(({
+        label,
+        count
+      }) => {
+        const wrap = document.createElement('div');
+        const legend = document.createElement('div');
+        legend.className = 'legend';
+        legend.innerHTML = `<span>${label || '<i>Unspecified</i>'}</span><span>${count}</span>`;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const inner = document.createElement('div');
+        inner.style.width = `${(count/max)*100}%`;
+        bar.appendChild(inner);
+        wrap.appendChild(legend);
+        wrap.appendChild(bar);
         el.appendChild(wrap);
       });
     }
 
-    function countBy(arr, fn, keys){
-      const m=new Map();
-      arr.forEach(a=>{ const k=fn(a)||''; m.set(k,(m.get(k)||0)+1); });
-      const rows=[]; (keys||Array.from(m.keys())).forEach(k=>rows.push({label:k,count:m.get(k)||0}));
-      if(!keys) rows.push({label:'',count:m.get('')||0});
+    function countBy(arr, fn, keys) {
+      const m = new Map();
+      arr.forEach(a => {
+        const k = fn(a) || '';
+        m.set(k, (m.get(k) || 0) + 1);
+      });
+      const rows = [];
+      (keys || Array.from(m.keys())).forEach(k => rows.push({
+        label: k,
+        count: m.get(k) || 0
+      }));
+      if (!keys) rows.push({
+        label: '',
+        count: m.get('') || 0
+      });
       return rows;
     }
 
-    function buildHeat(id,events){
-      const el=document.getElementById(id); el.innerHTML='';
-      const counts=Array.from({length:5},()=>Array(9).fill(0));
-      const mapR={Over:0,'Top Bar':1,Top:2,Mid:3,Low:4};
-      const mapC={'Left Outside':0,'Left Post':1,'Left':2,'Left Center':3,'Center':4,'Right Center':5,'Right':6,'Right Post':7,'Right Outside':8};
-      events.forEach(ev=>{
-        const loc=ev.details.location; if(!loc) return;
-        const [row,col]=loc.split(' / ').map(s=>s.trim());
-        const r=mapR[row], c=mapC[col]; if(r==null||c==null) return;
+    function buildHeat(id, events) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      const counts = Array.from({
+        length: 5
+      }, () => Array(9).fill(0));
+      const mapR = {
+        Over: 0,
+        'Top Bar': 1,
+        Top: 2,
+        Mid: 3,
+        Low: 4
+      };
+      const mapC = {
+        'Left Outside': 0,
+        'Left Post': 1,
+        'Left': 2,
+        'Left Center': 3,
+        'Center': 4,
+        'Right Center': 5,
+        'Right': 6,
+        'Right Post': 7,
+        'Right Outside': 8
+      };
+      events.forEach(ev => {
+        const loc = ev.details.location;
+        if (!loc) return;
+        const [row, col] = loc.split(' / ').map(s => s.trim());
+        const r = mapR[row],
+          c = mapC[col];
+        if (r == null || c == null) return;
         counts[r][c]++;
       });
-      const max=Math.max(1,...counts.flat());
-      for(let r=0;r<5;r++){
-        for(let c=0;c<9;c++){
-          const v=counts[r][c];
-          const d=document.createElement('div'); d.className='hc';
-          const isEdge=(c===0||c===1||c===7||c===8||r===0||r===1);
-          const a=0.10 + (v/max)*0.55;
-          d.style.background=isEdge?`rgba(255,160,58,${a})`:`rgba(58,160,255,${a})`;
-          const s=document.createElement('span'); s.textContent=v||'';
-          d.appendChild(s); el.appendChild(d);
+      const max = Math.max(1, ...counts.flat());
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 9; c++) {
+          const v = counts[r][c];
+          const d = document.createElement('div');
+          d.className = 'hc';
+          const isEdge = (c === 0 || c === 1 || c === 7 || c === 8 || r === 0 || r === 1);
+          const a = 0.10 + (v / max) * 0.55;
+          d.style.background = isEdge ? `rgba(255,160,58,${a})` : `rgba(58,160,255,${a})`;
+          const s = document.createElement('span');
+          s.textContent = v || '';
+          d.appendChild(s);
+          el.appendChild(d);
         }
       }
     }
 
-    function show(id){
-      ['screen-start','screen-game','screen-summary'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+    function show(id) {
+      ['screen-start', 'screen-game', 'screen-summary'].forEach(x => document.getElementById(x).classList.add(
+        'hidden'));
       document.getElementById(id).classList.remove('hidden');
     }
 
     // helper: download text as a file
-    function download(filename, text){
-      const a=document.createElement('a');
-      a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(text);
-      a.download=filename;
+    function download(filename, text) {
+      const a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
     }
   </script>
 </body>
+
 </html>
