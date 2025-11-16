@@ -866,35 +866,42 @@
       });
 
       $('#shotType').addEventListener('click', e => {
-        if (!e.target.classList.contains('pill')) return;
-        const pill = e.target;
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+      
         const wasActive = pill.classList.contains('active');
         $$('#shotType .pill').forEach(p => p.classList.remove('active'));
-        if (!wasActive) pill.classList.add('active'); // toggle off on second click
+      
+        // clicking an already-active pill clears everything (no selection)
+        if (!wasActive) pill.classList.add('active');
       });
       
       ['method-claimed', 'method-hand', 'method-body', 'method-leg'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('click', e => {
-          if (!e.target.classList.contains('pill')) return;
-          const pill = e.target;
+          const pill = e.target.closest('.pill');
+          if (!pill) return;
+      
           const wasActive = pill.classList.contains('active');
       
-          // Clear from ALL method rows
+          // Clear ALL method pills first
           document.querySelectorAll('.method-group .pill')
             .forEach(p => p.classList.remove('active'));
       
-          if (!wasActive) pill.classList.add('active'); // allow “no method” if re-clicked
+          // If it wasn’t active before, make it active; if it was, leave all off
+          if (!wasActive) pill.classList.add('active');
         });
       });
       
       // Strength pill selection
-      $('#strength').addEventListener('click', e => {
-        if (!e.target.classList.contains('pill')) return;
-        const pill = e.target;
+     $('#strength').addEventListener('click', e => {
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+      
         const wasActive = pill.classList.contains('active');
         $$('#strength .pill').forEach(p => p.classList.remove('active'));
-        if (!wasActive) pill.classList.add('active');
+      
+        if (!wasActive) pill.classList.add('active');  // second click = unselect
       });
 
       // Save / Skip
