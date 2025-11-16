@@ -860,16 +860,22 @@
         $$('#shotType .pill').forEach(p => p.classList.remove('active'));
         e.target.classList.add('active');
       });
+      
       ['method-claimed', 'method-hand', 'method-body', 'method-leg'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('click', e => {
           if (!e.target.classList.contains('pill')) return;
-          // clear active only within this subgroup
-          el.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      
+          // Clear active from ALL method rows
+          document
+            .querySelectorAll('.method-group .pill')
+            .forEach(p => p.classList.remove('active'));
+      
+          // Activate only the one that was clicked
           e.target.classList.add('active');
         });
       });
-
+      
       // Strength pill selection
       $('#strength').addEventListener('click', e => {
         if (!e.target.classList.contains('pill')) return;
