@@ -860,36 +860,41 @@
       document.getElementById('origin7').addEventListener('click', e => {
         const el = e.target.closest('.ocell');
         if (!el) return;
+        const wasActive = el.classList.contains('active');
         document.querySelectorAll('#origin7 .ocell').forEach(x => x.classList.remove('active'));
-        el.classList.add('active');
+        if (!wasActive) el.classList.add('active');   // click again -> unselect
       });
 
       $('#shotType').addEventListener('click', e => {
         if (!e.target.classList.contains('pill')) return;
+        const pill = e.target;
+        const wasActive = pill.classList.contains('active');
         $$('#shotType .pill').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
+        if (!wasActive) pill.classList.add('active'); // toggle off on second click
       });
       
       ['method-claimed', 'method-hand', 'method-body', 'method-leg'].forEach(id => {
         const el = document.getElementById(id);
         el.addEventListener('click', e => {
           if (!e.target.classList.contains('pill')) return;
+          const pill = e.target;
+          const wasActive = pill.classList.contains('active');
       
-          // Clear active from ALL method rows
-          document
-            .querySelectorAll('.method-group .pill')
+          // Clear from ALL method rows
+          document.querySelectorAll('.method-group .pill')
             .forEach(p => p.classList.remove('active'));
       
-          // Activate only the one that was clicked
-          e.target.classList.add('active');
+          if (!wasActive) pill.classList.add('active'); // allow “no method” if re-clicked
         });
       });
       
       // Strength pill selection
       $('#strength').addEventListener('click', e => {
         if (!e.target.classList.contains('pill')) return;
+        const pill = e.target;
+        const wasActive = pill.classList.contains('active');
         $$('#strength .pill').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
+        if (!wasActive) pill.classList.add('active');
       });
 
       // Save / Skip
@@ -1132,8 +1137,9 @@
           d.title = `${['Over','Top Bar','Top','Mid','Low'][r]} / ${labels[c]}`;
           d.textContent = ['Ov', 'TB', 'T', 'M', 'L'][r];
           d.addEventListener('click', () => {
+            const wasActive = d.classList.contains('active');
             document.querySelectorAll('#goalGrid .cell').forEach(x => x.classList.remove('active'));
-            d.classList.add('active');
+            if (!wasActive) d.classList.add('active');  // second click clears selection
           });
           g.appendChild(d);
         }
