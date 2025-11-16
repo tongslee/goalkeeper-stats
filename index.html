@@ -921,18 +921,40 @@
       }
     }
 
+    function resetDetailSelections() {
+      // Clear method groups
+      ['method-claimed', 'method-hand', 'method-body', 'method-leg'].forEach(id => {
+        document.querySelectorAll(`#${id} .pill`).forEach(p => p.classList.remove('active'));
+      });
+    
+      // Clear shot origin grid
+      document.querySelectorAll('#origin7 .ocell').forEach(c => c.classList.remove('active'));
+    
+      // Clear goal grid selection
+      document.querySelectorAll('#goalGrid .cell').forEach(c => c.classList.remove('active'));
+    
+      // Clear shot type
+      document.querySelectorAll('#shotType .pill').forEach(p => p.classList.remove('active'));
+    
+      // Clear shot strength
+      document.querySelectorAll('#strength .pill').forEach(p => p.classList.remove('active'));
+    }
+    
     function handleMainTap(result) {
+      // Always start with a clean detail modal
+      resetDetailSelections();
+    
       pending = {
-        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(
-          2)),
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)),
         t: Date.now(),
         result,
         details: {}
       };
+    
       // Set label at top of modal
       const lbl = document.getElementById('resultLabel');
       if (lbl) lbl.textContent = result.toUpperCase();
-
+    
       document.getElementById('modal').classList.add('open');
     }
 
