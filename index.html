@@ -789,6 +789,15 @@
       </div>
     </div>
   </div>
+  
+  <!-- Heatmap Detail Modal -->
+  <div id="heatmapModal" class="modal">
+    <div class="sheet">
+      <h3 id="hmTitle" style="text-align:center; margin-top:0;"></h3>
+      <p id="hmBody" style="text-align:center; font-size:16px; margin:12px 0;"></p>
+      <button id="hmClose" class="btn primary">Close</button>
+    </div>
+  </div>
 
   <script>
     const $ = s => document.querySelector(s),
@@ -1010,6 +1019,8 @@
     }
 
     function buildOriginHeat(elId, events){
+      const countsSaved = Array.from({length: rows}, ()=>Array(cols).fill(0));
+      const countsConceded = Array.from({length: rows}, ()=>Array(cols).fill(0));
       const el = document.getElementById(elId);
       el.innerHTML = '';
 
@@ -1030,7 +1041,10 @@
         if (!pos) return;
         const r = Number(pos[1]) - 1; // r1..r3 -> 0..2
         const c = Number(pos[3]) - 1; // c1..c7 -> 0..6
-        if (r>=0 && r<rows && c>=0 && c<cols) counts[r][c]++;
+        if (r>=0 && r<rows && c>=0 && c<cols) {
+          if (ev.result === 'Saved') countsSaved[r][c]++;
+          if (ev.result === 'Conceded') countsConceded[r][c]++;
+        }
       });
 
       const max = Math.max(1, ...counts.flat());
@@ -1056,7 +1070,15 @@
           const a = 0.12 + intensity * 0.60;               // opacity ramp
           cell.style.background = zoneRGBA(r,c,a);
 
-          const span = document.createElement('span'); span.textContent = v ? v : '';
+          const span = document.createElement('span');
+          span.textContent = v ? '' : '';
+          cell.dataset.label = el.dataset.value || '';
+          cell.dataset.saved = countsSaved[r][c] || 0;
+          cell.dataset.conceded = countsConceded[r][c] || 0;
+          if (countsSaved[r][c] + countsConceded[r][c] > 0) {
+              const pct = Math.round(countsSaved[r][c] / (countsSaved[r][c] + countsConceded[r][c]) * 100);
+              span.textContent = pct + '%';
+          }
           cell.appendChild(span); el.appendChild(cell);
         }
       }
@@ -1113,6 +1135,7 @@
       buildOriginHeat('originHeat', session.events);
       buildHeat('heat', session.events);
       show('screen-summary');
+      attachHeatmapClicks();
     }
 
     function buildBars(id, data) {
@@ -1157,6 +1180,8 @@
     }
 
     function buildHeat(id, events) {
+      const savedCount = Array.from({length:5}, ()=>Array(9).fill(0));
+      const concededCount = Array.from({length:5}, ()=>Array(9).fill(0));
       const el = document.getElementById(id);
       el.innerHTML = '';
       const counts = Array.from({
@@ -1187,8 +1212,17 @@
         const r = mapR[row],
           c = mapC[col];
         if (r == null || c == null) return;
-        counts[r][c]++;
+        if (ev.result === "Saved") savedCount[r][c]++;
+        if (ev.result === "Conceded") concededCount[r][c]++;
       });
+      d.dataset.saved = savedCount[r][c];
+      d.dataset.conceded = concededCount[r][c];
+      if (savedCount[r][c] + concededCount[r][c] > 0) {
+          const pct = Math.round(savedCount[r][c] / (savedCount[r][c] + concededCount[r][c]) * 100);
+          s.textContent = pct + "%";
+      } else {
+          s.textContent = "";
+      }
       const max = Math.max(1, ...counts.flat());
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 9; c++) {
@@ -1204,6 +1238,45 @@
           el.appendChild(d);
         }
       }
+    }
+
+    /* ---------------- HEATMAP CLICK MODAL ---------------- */
+
+    function attachHeatmapClicks() {
+      const modal = document.getElementById('heatmapModal');
+      const title = document.getElementById('hmTitle');
+      const body = document.getElementById('hmBody');
+      const close = document.getElementById('hmClose');
+    
+      function handler(e) {
+        const cell = e.currentTarget;
+        const saved = Number(cell.dataset.saved || 0);
+        const conceded = Number(cell.dataset.conceded || 0);
+        const total = saved + conceded;
+    
+        if (!total) return; // no data to show
+    
+        const pct = Math.round((saved / total) * 100);
+        title.textContent = cell.dataset.label || "Cell";
+        body.textContent = `${saved} Saved · ${conceded} Conceded (${pct}% Saved)`;
+    
+        modal.classList.add('open');
+      }
+    
+      // Shot Origin Heatmap
+      document.querySelectorAll('#originHeat .hc').forEach(cell => {
+        cell.addEventListener('click', handler);
+      });
+    
+      // Goal Location Heatmap
+      document.querySelectorAll('#heat .hc').forEach(cell => {
+        cell.addEventListener('click', handler);
+      });
+    
+      close.addEventListener('click', () => modal.classList.remove('open'));
+      modal.addEventListener('click', e => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
     }
 
     function show(id) {
