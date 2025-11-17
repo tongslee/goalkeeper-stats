@@ -187,6 +187,49 @@
     .small { font-size: 12px; }
     .error { color: #fecaca; font-size: 14px; }
 
+        /* Modal for heatmap cell details */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .6);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .sheet {
+      background: var(--panel);
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px;
+      box-shadow: var(--shadow);
+      max-height: 85vh;
+      overflow: auto;
+    }
+
+    .btn {
+      padding: 10px 12px;
+      background: #0f1520;
+      border: 1px solid #1f2733;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #001e3c;
+      border: none;
+      font-weight: 600;
+    }
+
     @media (max-width: 400px) {
       .container { padding: 12px; }
       .card { padding: 12px; }
@@ -245,6 +288,15 @@
       <div class="small muted">
         Tip: “All games (combined)” aggregates every event returned by the API.
       </div>
+    </div>
+  </div>
+
+  <!-- Heatmap Detail Modal -->
+  <div id="heatmapModal" class="modal">
+    <div class="sheet">
+      <h3 id="hmTitle" style="text-align:center; margin-top:0;"></h3>
+      <p id="hmBody" style="text-align:center; font-size:16px; margin:12px 0;"></p>
+      <button id="hmClose" class="btn primary">Close</button>
     </div>
   </div>
 
@@ -404,6 +456,9 @@
       buildBars('typeBars', countBy(events, ev => ev.details?.shotType, TYPE_KEYS));
       buildOriginHeat('originHeat', events);
       buildHeat('heat', events);
+      buildOriginHeat('originHeat', events);
+      buildHeat('heat', events);
+      attachHeatmapClicks();
     }
 
     function buildBars(id, data) {
@@ -580,6 +635,50 @@
       }
     }
 
+        /* ---------------- HEATMAP CLICK MODAL ---------------- */
+
+    function attachHeatmapClicks() {
+      const modal = document.getElementById('heatmapModal');
+      const title = document.getElementById('hmTitle');
+      const body = document.getElementById('hmBody');
+      const close = document.getElementById('hmClose');
+
+      if (!modal || !title || !body || !close) return;
+
+      function handler(e) {
+        const cell = e.currentTarget;
+        const saved = Number(cell.dataset.saved || 0);
+        const conceded = Number(cell.dataset.conceded || 0);
+        const total = saved + conceded;
+
+        if (!total) return; // nothing to show for empty tiles
+
+        const pct = Math.round((saved / total) * 100);
+        title.textContent = cell.dataset.label || 'Cell';
+        body.textContent = `${saved} Saved · ${conceded} Conceded (${pct}% Saved)`;
+
+        modal.classList.add('open');
+      }
+
+      // Remove old handlers by cloning nodes (in case we re-render)
+      document.querySelectorAll('#originHeat .hc').forEach(cell => {
+        const clone = cell.cloneNode(true);
+        cell.replaceWith(clone);
+        clone.addEventListener('click', handler);
+      });
+
+      document.querySelectorAll('#heat .hc').forEach(cell => {
+        const clone = cell.cloneNode(true);
+        cell.replaceWith(clone);
+        clone.addEventListener('click', handler);
+      });
+
+      close.onclick = () => modal.classList.remove('open');
+      modal.onclick = e => {
+        if (e.target === modal) modal.classList.remove('open');
+      };
+    }
+    
     // kick things off
     loadSessions();
   </script>
