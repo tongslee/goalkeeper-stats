@@ -273,7 +273,7 @@
       const errorEl = $('#error');
       errorEl.textContent = '';
       try {
-        const res = await fetch('https://keeper-upload-api.vercel.app/api/stats');
+        const res = await fetch('/api/stats-proxy');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
