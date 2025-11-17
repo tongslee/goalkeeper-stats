@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Daniel GK Stats – Game History</title>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --panel: #121720;
+      --muted: #8492a6;
+      --text: #e8eefc;
+      --accent: #3aa0ff;
+      --shadow: 0 8px 30px rgba(0,0,0,.4);
+      --radius: 16px;
+      --pad: 14px;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 10px;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--pad);
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    select {
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+      background: #0f1520;
+      color: var(--text);
+      padding: 10px 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #1f2733;
+      background: #0f1520;
+      font-size: 12px;
+      color: var(--muted);
+      gap: 6px;
+    }
+
+    .badge span.key {
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      background: #0f1520;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+      text-align: center;
+    }
+
+    .stat .v {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .bars {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar {
+      background: #0f1520;
+      border-radius: 999px;
+      border: 1px solid #1f2733;
+      overflow: hidden;
+      height: 16px;
+    }
+
+    .bar > div {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .heat7 {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      background: #0b111b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+    }
+
+    .heat7 .hc {
+      aspect-ratio: 1/1;
+      border-radius: 6px;
+      border: 1px solid #1a2332;
+      position: relative;
+    }
+
+    .heat7 .hc span {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      mix-blend-mode: screen;
+    }
+
+    .heat {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 4px;
+      background: #0b111b;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid #1f2733;
+    }
+
+    .heat .hc {
+      aspect-ratio: 1/1;
+      border-radius: 6px;
+      border: 1px solid #1a2332;
+      position: relative;
+    }
+
+    .heat .hc span {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      color: #cbd5e1;
+      mix-blend-mode: screen;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .error { color: #fecaca; font-size: 14px; }
+
+    @media (max-width: 400px) {
+      .container { padding: 12px; }
+      .card { padding: 12px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card stack">
+      <h1>Daniel GK Stats – Game History</h1>
+
+      <div class="stack">
+        <div>
+          <label for="gameSelect">Select game</label>
+          <select id="gameSelect">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+        <div id="metaRow" class="stack small muted"></div>
+        <div id="error" class="error"></div>
+      </div>
+
+      <h2>Game Summary</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="v" id="tSaves">0</div>
+          <div class="k">Saves</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tConceded">0</div>
+          <div class="k">Conceded</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tOff">0</div>
+          <div class="k">Off Target</div>
+        </div>
+        <div class="stat">
+          <div class="v" id="tSavePct">0%</div>
+          <div class="k">Save %</div>
+        </div>
+      </div>
+
+      <h3>Shot Origins</h3>
+      <div class="bars" id="origBars"></div>
+
+      <h3>Shot Types</h3>
+      <div class="bars" id="typeBars"></div>
+
+      <h3>Shot Origin Heatmap</h3>
+      <div class="heat7" id="originHeat"></div>
+
+      <h3>Heatmap</h3>
+      <div class="heat" id="heat"></div>
+
+      <div class="small muted">
+        Tip: “All games (combined)” aggregates every event returned by the API.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $  = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+
+    // These keys match your original summary page
+    const ORIG_KEYS = [
+      '6yd – Left','6yd – Center','6yd – Right',
+      '18yd – LW','18yd – L','18yd – C','18yd – R','18yd – RW',
+      'Outside – LW','Outside – L','Outside – C','Outside – R','Outside – RW',
+      'Corner – L','PK','Corner – R'
+    ];
+
+    const TYPE_KEYS = [
+      'Open Play','Header','Free Kick',
+      '1v1 – Challenged','1v1 – Stayed Back',
+      'Corner – Inswing','Corner – Outswing',
+      'PK – Regulation','PK – Shootout'
+    ];
+
+    let sessions = [];
+
+    async function loadSessions() {
+      const errorEl = $('#error');
+      errorEl.textContent = '';
+      try {
+        const res = await fetch('https://keeper-upload-api.vercel.app/api/stats');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        // Expect array of sessions; fall back to data.sessions if needed
+        if (Array.isArray(data)) {
+          sessions = data;
+        } else if (Array.isArray(data.sessions)) {
+          sessions = data.sessions;
+        } else {
+          throw new Error('Unexpected API shape');
+        }
+
+        if (!sessions.length) {
+          errorEl.textContent = 'No games found from API.';
+          $('#gameSelect').innerHTML = '<option value="">No data</option>';
+          return;
+        }
+
+        buildGameSelect();
+        // default: all games combined
+        $('#gameSelect').value = 'all';
+        renderSummary();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = 'Error loading data from API. Check console for details.';
+        $('#gameSelect').innerHTML = '<option value="">Error</option>';
+      }
+    }
+
+    function buildGameSelect() {
+      const sel = $('#gameSelect');
+      sel.innerHTML = '';
+
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = `All games (combined – ${sessions.length})`;
+      sel.appendChild(allOpt);
+
+      sessions.forEach((s, idx) => {
+        const m = s.meta || {};
+        const startedAt = m.startedAt ? new Date(m.startedAt) : null;
+        const dateStr = startedAt
+          ? startedAt.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})
+          : 'Unknown date';
+        const label = `${dateStr} – ${m.team || 'Team ?'} vs ${m.opponent || 'Opponent ?'} (${m.pitch || 'Pitch ?'})`;
+
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = label;
+        sel.appendChild(opt);
+      });
+
+      sel.addEventListener('change', renderSummary);
+    }
+
+    function renderSummary() {
+      const selVal = $('#gameSelect').value;
+      let events = [];
+      let metaSummary = '';
+
+      if (selVal === 'all') {
+        sessions.forEach(s => {
+          events = events.concat(s.events || []);
+        });
+        metaSummary = `All games – ${sessions.length} sessions`;
+      } else {
+        const idx = Number(selVal);
+        const s = sessions[idx];
+        if (!s) return;
+        events = s.events || [];
+        const m = s.meta || {};
+        const dt = m.startedAt ? new Date(m.startedAt) : null;
+        const dateStr = dt
+          ? dt.toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})
+          : 'Unknown date';
+        metaSummary = `${m.team || 'Team ?'} vs ${m.opponent || 'Opponent ?'} · ${m.pitch || 'Pitch ?'} · ${dateStr}`;
+      }
+
+      renderMeta(metaSummary);
+      renderStatsAndCharts(events);
+    }
+
+    function renderMeta(text) {
+      const row = $('#metaRow');
+      row.innerHTML = '';
+      if (!text) return;
+      const div = document.createElement('div');
+      div.textContent = text;
+      row.appendChild(div);
+    }
+
+    function renderStatsAndCharts(events) {
+      const saves = events.filter(e => e.result === 'Saved').length;
+      const conceded = events.filter(e => e.result === 'Conceded').length;
+      const off = events.filter(e => e.result === 'Off Target').length;
+      const on = saves + conceded;
+      const pct = on ? Math.round((saves / on) * 100) : 0;
+
+      $('#tSaves').textContent = saves;
+      $('#tConceded').textContent = conceded;
+      $('#tOff').textContent = off;
+      $('#tSavePct').textContent = pct + '%';
+
+      buildBars('origBars', countBy(events, ev => ev.details?.origin, ORIG_KEYS));
+      buildBars('typeBars', countBy(events, ev => ev.details?.shotType, TYPE_KEYS));
+      buildOriginHeat('originHeat', events);
+      buildHeat('heat', events);
+    }
+
+    function buildBars(id, data) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      const max = Math.max(1, ...data.map(x => x.count));
+      data.forEach(({ label, count }) => {
+        const wrap = document.createElement('div');
+        const legend = document.createElement('div');
+        legend.className = 'legend';
+        legend.innerHTML = `<span>${label || '<i>Unspecified</i>'}</span><span>${count}</span>`;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const inner = document.createElement('div');
+        inner.style.width = `${(count / max) * 100}%`;
+        bar.appendChild(inner);
+        wrap.appendChild(legend);
+        wrap.appendChild(bar);
+        el.appendChild(wrap);
+      });
+    }
+
+    function countBy(arr, fn, keys) {
+      const m = new Map();
+      arr.forEach(a => {
+        const k = fn(a) || '';
+        m.set(k, (m.get(k) || 0) + 1);
+      });
+      const rows = [];
+      (keys || Array.from(m.keys())).forEach(k => rows.push({
+        label: k,
+        count: m.get(k) || 0
+      }));
+      if (!keys) rows.push({ label: '', count: m.get('') || 0 });
+      return rows;
+    }
+
+    // --- Shot Origin Heatmap (3×7) – using % saved in each cell ---
+    function buildOriginHeat(elId, events) {
+      const el = document.getElementById(elId);
+      el.innerHTML = '';
+
+      const rows = 3, cols = 7;
+      const savedCounts    = Array.from({ length: rows }, () => Array(cols).fill(0));
+      const concededCounts = Array.from({ length: rows }, () => Array(cols).fill(0));
+      const totalCounts    = Array.from({ length: rows }, () => Array(cols).fill(0));
+      const posToLabel     = {};
+
+      const labelToFirstPos = {
+        'Corner – L':'r1c1','18yd – LW':'r1c2','6yd – Left':'r1c3','6yd – Center':'r1c4','6yd – Right':'r1c5','18yd – RW':'r1c6','Corner – R':'r1c7',
+        'Outside – LW':'r2c1','18yd – L':'r2c3','18yd – C':'r2c4','18yd – R':'r2c5','Outside – RW':'r2c7',
+        'Outside – L':'r3c2','Outside – C':'r3c4','Outside – R':'r3c5'
+      };
+
+      events.forEach(ev => {
+        const label = ev.details?.origin || '';
+        const pos = ev.details?.originPos || labelToFirstPos[label];
+        if (!pos) return;
+        const r = Number(pos[1]) - 1;
+        const c = Number(pos[3]) - 1;
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+
+        if (ev.result === 'Saved')    savedCounts[r][c]++;
+        if (ev.result === 'Conceded') concededCounts[r][c]++;
+        if (ev.result === 'Saved' || ev.result === 'Conceded') {
+          totalCounts[r][c]++;
+          if (!posToLabel[pos]) posToLabel[pos] = label || pos;
+        }
+      });
+
+      const max = Math.max(1, ...totalCounts.flat());
+
+      const zoneRGBA = (r, c, alpha) => {
+        if (r === 0 && (c === 2 || c === 3 || c === 4)) return `rgba(255,100,100,${alpha})`;
+        if ((r === 0 && (c === 1 || c === 5)) || (r === 1 && c >= 1 && c <= 5)) return `rgba(255,255,100,${alpha})`;
+        if (r === 0 && (c === 0 || c === 6)) return `rgba(100,200,100,${alpha})`;
+        return `rgba(58,160,255,${alpha})`;
+      };
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const total = totalCounts[r][c];
+          const saved = savedCounts[r][c];
+
+          const cell = document.createElement('div');
+          cell.className = 'hc';
+
+          const intensity = total / max;
+          const a = 0.12 + intensity * 0.60;
+          cell.style.background = zoneRGBA(r, c, a);
+
+          const span = document.createElement('span');
+          if (total > 0) {
+            const pct = Math.round((saved / total) * 100);
+            span.textContent = pct + '%';
+          } else {
+            span.textContent = '';
+          }
+
+          const key = `r${r+1}c${c+1}`;
+          cell.dataset.label = posToLabel[key] || key;
+          cell.dataset.saved = saved;
+          cell.dataset.conceded = total - saved;
+
+          cell.appendChild(span);
+          el.appendChild(cell);
+        }
+      }
+    }
+
+    // --- Goal Location Heatmap – % saved per cell ---
+    function buildHeat(id, events) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+
+      const rows = 5, cols = 9;
+      const savedCount    = Array.from({ length: rows }, () => Array(cols).fill(0));
+      const concededCount = Array.from({ length: rows }, () => Array(cols).fill(0));
+      const totalCounts   = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+      const mapR = { Over:0, 'Top Bar':1, Top:2, Mid:3, Low:4 };
+      const mapC = {
+        'Left Outside':0,'Left Post':1,'Left':2,'Left Center':3,
+        'Center':4,'Right Center':5,'Right':6,'Right Post':7,'Right Outside':8
+      };
+
+      events.forEach(ev => {
+        const loc = ev.details?.location;
+        if (!loc) return;
+        const [row, col] = loc.split(' / ').map(s => s.trim());
+        const r = mapR[row], c = mapC[col];
+        if (r == null || c == null) return;
+
+        if (ev.result === 'Saved')    savedCount[r][c]++;
+        if (ev.result === 'Conceded') concededCount[r][c]++;
+        if (ev.result === 'Saved' || ev.result === 'Conceded') totalCounts[r][c]++;
+      });
+
+      const max = Math.max(1, ...totalCounts.flat());
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const total = totalCounts[r][c];
+          const saved = savedCount[r][c];
+
+          const d = document.createElement('div');
+          d.className = 'hc';
+
+          const isEdge = (c === 0 || c === 1 || c === 7 || c === 8 || r === 0 || r === 1);
+          const intensity = total / max;
+          const a = 0.10 + intensity * 0.55;
+          d.style.background = isEdge
+            ? `rgba(255,160,58,${a})`
+            : `rgba(58,160,255,${a})`;
+
+          const s = document.createElement('span');
+          if (total > 0) {
+            const pct = Math.round((saved / total) * 100);
+            s.textContent = pct + '%';
+          } else {
+            s.textContent = '';
+          }
+
+          d.dataset.saved = saved;
+          d.dataset.conceded = total - saved;
+          d.dataset.label =
+            `${['Over','Top Bar','Top','Mid','Low'][r]} / ${
+              ['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][c]
+            }`;
+
+          d.appendChild(s);
+          el.appendChild(d);
+        }
+      }
+    }
+
+    // kick things off
+    loadSessions();
+  </script>
+</body>
+</html>
