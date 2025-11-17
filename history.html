@@ -272,32 +272,55 @@
     async function loadSessions() {
       const errorEl = $('#error');
       errorEl.textContent = '';
+    
       try {
+        // use your proxy (no CORS)
         const res = await fetch('/api/stats-proxy');
         if (!res.ok) throw new Error('HTTP ' + res.status);
+    
         const data = await res.json();
-
-        // Expect array of sessions; fall back to data.sessions if needed
+        console.log('API raw data:', data);
+    
+        let parsed = [];
+    
+        // 1) If the JSON itself is an array
         if (Array.isArray(data)) {
-          sessions = data;
-        } else if (Array.isArray(data.sessions)) {
-          sessions = data.sessions;
-        } else {
-          throw new Error('Unexpected API shape');
+          parsed = data;
         }
-
+        // 2) Common container keys
+        else if (Array.isArray(data.sessions)) {
+          parsed = data.sessions;
+        } else if (Array.isArray(data.data)) {
+          parsed = data.data;
+        } else if (Array.isArray(data.items)) {
+          parsed = data.items;
+        }
+        // 3) Fallback: use all object values as sessions
+        else if (data && typeof data === 'object') {
+          const values = Object.values(data);
+          if (values.length && typeof values[0] === 'object') {
+            parsed = values;
+          }
+        }
+    
+        if (!parsed || !parsed.length) {
+          throw new Error('Could not find sessions array in API response');
+        }
+    
+        sessions = parsed;
+    
         if (!sessions.length) {
           errorEl.textContent = 'No games found from API.';
           $('#gameSelect').innerHTML = '<option value="">No data</option>';
           return;
         }
-
+    
         buildGameSelect();
         // default: all games combined
         $('#gameSelect').value = 'all';
         renderSummary();
       } catch (err) {
-        console.error(err);
+        console.error('loadSessions error:', err);
         errorEl.textContent = 'Error loading data from API. Check console for details.';
         $('#gameSelect').innerHTML = '<option value="">Error</option>';
       }
