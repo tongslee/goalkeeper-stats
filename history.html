@@ -258,6 +258,43 @@
     .legend-green  { background: rgba(100,200,100,1); }
     .legend-blue   { background: rgba(58,160,255,1); }
 
+    /* Heatmap Legend */
+    .heat-legend {
+      display: flex;
+      gap: 16px;
+      margin: 8px 0 18px;
+      font-size: 13px;
+      color: var(--muted);
+      align-items: center;
+    }
+    
+    .heat-legend div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .legend-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid #1a2332;
+    }
+    
+    /* Matches your heatmap zone colors */
+    
+    .legend-box.outside {
+      background: rgb(110,110,140);
+    }
+    
+    .legend-box.frame {
+      background: rgb(255,160,58);
+    }
+    
+    .legend-box.goal {
+      background: rgb(58,160,255);
+    }
+
     @media (max-width: 400px) {
       .container { padding: 12px; }
       .card { padding: 12px; }
@@ -330,6 +367,11 @@
 
       <h3>Shot Heatmap</h3>
       <div class="heat" id="heat"></div>
+      <div class="heat-legend">
+        <div><span class="legend-box outside"></span> Outside</div>
+        <div><span class="legend-box frame"></span> Frame</div>
+        <div><span class="legend-box goal"></span> On Target</div>
+      </div>
 
       <div class="small muted">
         Tip: “All games (combined)” aggregates every event returned by the API.
