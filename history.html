@@ -103,7 +103,13 @@
       color: var(--muted);
     }
 
-        .shot-type-stats {
+    .stat .sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .shot-type-stats {
       margin-top: 8px;
       grid-template-columns: repeat(2, 1fr);
     }
@@ -580,24 +586,52 @@
       const el = document.getElementById('shotTypeStats');
       if (!el) return;
       el.innerHTML = '';
-
-      const rows = countBy(events, ev => ev.details?.shotType, TYPE_KEYS);
-
-      rows.forEach(({ label, count }) => {
+    
+      // Aggregate by shot type
+      const stats = new Map();
+      events.forEach(ev => {
+        const key = ev.details?.shotType || '';
+        if (!stats.has(key)) {
+          stats.set(key, { total: 0, saved: 0, conceded: 0, off: 0 });
+        }
+        const s = stats.get(key);
+        s.total++;
+        if (ev.result === 'Saved') s.saved++;
+        else if (ev.result === 'Conceded') s.conceded++;
+        else if (ev.result === 'Off Target') s.off++;
+      });
+    
+      // Render tiles in TYPE_KEYS order
+      TYPE_KEYS.forEach(label => {
+        const s = stats.get(label) || { total: 0, saved: 0, conceded: 0, off: 0 };
+        const onTarget = s.saved + s.conceded;
+        const pct = onTarget ? Math.round((s.saved / onTarget) * 100) : 0;
+    
         const card = document.createElement('div');
         card.className = 'stat';
-        if (count > 0) card.classList.add('muted-active');
-
+        if (s.total > 0) card.classList.add('muted-active');
+    
+        // for modal
+        card.dataset.label = label || 'Unspecified';
+        card.dataset.saved = s.saved;
+        card.dataset.conceded = s.conceded;
+        card.dataset.clickable = onTarget > 0 ? '1' : '0';
+    
         const v = document.createElement('div');
         v.className = 'v';
-        v.textContent = count;
-
+        v.textContent = s.total;                // total shots of this type
+    
         const k = document.createElement('div');
         k.className = 'k';
         k.textContent = label || 'Unspecified';
-
+    
+        const sub = document.createElement('div');
+        sub.className = 'sub';
+        sub.textContent = onTarget > 0 ? `${pct}% Save` : '';
+    
         card.appendChild(v);
         card.appendChild(k);
+        card.appendChild(sub);
         el.appendChild(card);
       });
     }
@@ -828,6 +862,15 @@
         cell.replaceWith(clone);
         clone.addEventListener('click', handler);
       });
+
+      // Shot Type tiles
+      document
+        .querySelectorAll('#shotTypeStats .stat[data-clickable="1"]')
+        .forEach(card => {
+          const clone = card.cloneNode(true);
+          card.replaceWith(clone);
+          clone.addEventListener('click', handler);
+        });
 
       close.onclick = () => modal.classList.remove('open');
       modal.onclick = e => {
