@@ -230,6 +230,34 @@
       font-weight: 600;
     }
 
+    /* Legend for shot origin heatmap */
+    .legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      align-items: center;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .legend-red    { background: rgba(255,100,100,1); }
+    .legend-yellow { background: rgba(255,255,100,1); }
+    .legend-green  { background: rgba(100,200,100,1); }
+    .legend-blue   { background: rgba(58,160,255,1); }
+
     @media (max-width: 400px) {
       .container { padding: 12px; }
       .card { padding: 12px; }
@@ -280,6 +308,24 @@
       <div class="bars" id="typeBars"></div>
 
       <h3>Shot Origin Heatmap</h3>
+      <div class="legend-row">
+        <div class="legend-item">
+          <span class="legend-swatch legend-red"></span>
+          <span>6 yd box</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch legend-yellow"></span>
+          <span>18 yd box</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch legend-green"></span>
+          <span>Corner</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-swatch legend-blue"></span>
+          <span>Outside</span>
+        </div>
+      </div>
       <div class="heat7" id="originHeat"></div>
 
       <h3>Heatmap</h3>
