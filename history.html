@@ -276,7 +276,7 @@
       <h3>Shot Origins</h3>
       <div class="bars" id="origBars"></div>
 
-      <h3>Shot Types</h3>
+      <h3>PKs</h3>
       <div class="bars" id="typeBars"></div>
 
       <h3>Shot Origin Heatmap</h3>
@@ -313,10 +313,8 @@
     ];
 
     const TYPE_KEYS = [
-      'Open Play','Header','Free Kick',
-      '1v1 – Challenged','1v1 – Stayed Back',
-      'Corner – Inswing','Corner – Outswing',
-      'PK – Regulation','PK – Shootout'
+      'PK – Regulation',
+      'PK – Shootout'
     ];
 
     let sessions = [];
@@ -551,18 +549,21 @@
           cell.style.background = zoneRGBA(r, c, a);
 
           const span = document.createElement('span');
+          
           if (total > 0) {
             const pct = Math.round((saved / total) * 100);
-            span.textContent = pct + '%';
+            const conceded = total - saved;
+            // first line: saved/conceded, second line: %
+            span.innerHTML = `${saved}/${conceded}<br>${pct}%`;
           } else {
             span.textContent = '';
           }
-
+          
           const key = `r${r+1}c${c+1}`;
           cell.dataset.label = posToLabel[key] || key;
           cell.dataset.saved = saved;
           cell.dataset.conceded = total - saved;
-
+          
           cell.appendChild(span);
           el.appendChild(cell);
         }
@@ -615,20 +616,22 @@
             : `rgba(58,160,255,${a})`;
 
           const s = document.createElement('span');
+          
           if (total > 0) {
             const pct = Math.round((saved / total) * 100);
-            s.textContent = pct + '%';
+            const conceded = total - saved;
+            s.innerHTML = `${saved}/${conceded}<br>${pct}%`;
           } else {
             s.textContent = '';
           }
-
+          
           d.dataset.saved = saved;
           d.dataset.conceded = total - saved;
           d.dataset.label =
             `${['Over','Top Bar','Top','Mid','Low'][r]} / ${
               ['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][c]
             }`;
-
+          
           d.appendChild(s);
           el.appendChild(d);
         }
