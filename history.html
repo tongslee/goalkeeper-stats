@@ -305,16 +305,13 @@
     const $$ = s => Array.from(document.querySelectorAll(s));
 
     // These keys match your original summary page
-    const ORIG_KEYS = [
-      '6yd – Left','6yd – Center','6yd – Right',
-      '18yd – LW','18yd – L','18yd – C','18yd – R','18yd – RW',
-      'Outside – LW','Outside – L','Outside – C','Outside – R','Outside – RW',
-      'Corner – L','PK','Corner – R'
-    ];
+    const ORIG_KEYS = ['PK'];
 
     const TYPE_KEYS = [
-      'PK – Regulation',
-      'PK – Shootout'
+      'Open Play','Header','Free Kick',
+      '1v1 – Challenged','1v1 – Stayed Back',
+      'Corner – Inswing','Corner – Outswing',
+      'PK – Regulation','PK – Shootout'
     ];
 
     let sessions = [];
