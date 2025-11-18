@@ -103,6 +103,23 @@
       color: var(--muted);
     }
 
+        .shot-type-stats {
+      margin-top: 8px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 640px) {
+      .shot-type-stats {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    /* For shot-type tiles with data */
+    .stat.muted-active {
+      background: #151d2a;   /* more muted than the bright blue */
+      border-color: #24324a;
+    }
+
     .bars {
       display: grid;
       gap: 8px;
@@ -338,11 +355,8 @@
         </div>
       </div>
 
-      <h3>PKs</h3>
-      <div class="bars" id="origBars"></div>
-
       <h3>Shot Types</h3>
-      <div class="bars" id="typeBars"></div>
+      <div class="stats shot-type-stats" id="shotTypeStats"></div>
 
       <h3>Shot Origin Heatmap</h3>
       <div class="legend-row">
@@ -393,8 +407,6 @@
     const $$ = s => Array.from(document.querySelectorAll(s));
 
     // These keys match your original summary page
-    const ORIG_KEYS = ['PK'];
-
     const TYPE_KEYS = [
       'Open Play','Header','Free Kick',
       '1v1 – Challenged','1v1 – Stayed Back',
@@ -535,10 +547,10 @@
       $('#tOff').textContent = off;
       $('#tSavePct').textContent = pct + '%';
 
-      buildBars('origBars', countBy(events, ev => ev.details?.origin, ORIG_KEYS));
-      buildBars('typeBars', countBy(events, ev => ev.details?.shotType, TYPE_KEYS));
-      buildOriginHeat('originHeat', events);
-      buildHeat('heat', events);
+      // New shot-type tiles
+      buildShotTypeStats(events);
+
+      // Heatmaps
       buildOriginHeat('originHeat', events);
       buildHeat('heat', events);
       attachHeatmapClicks();
@@ -561,6 +573,32 @@
         wrap.appendChild(legend);
         wrap.appendChild(bar);
         el.appendChild(wrap);
+      });
+    }
+
+    function buildShotTypeStats(events) {
+      const el = document.getElementById('shotTypeStats');
+      if (!el) return;
+      el.innerHTML = '';
+
+      const rows = countBy(events, ev => ev.details?.shotType, TYPE_KEYS);
+
+      rows.forEach(({ label, count }) => {
+        const card = document.createElement('div');
+        card.className = 'stat';
+        if (count > 0) card.classList.add('muted-active');
+
+        const v = document.createElement('div');
+        v.className = 'v';
+        v.textContent = count;
+
+        const k = document.createElement('div');
+        k.className = 'k';
+        k.textContent = label || 'Unspecified';
+
+        card.appendChild(v);
+        card.appendChild(k);
+        el.appendChild(card);
       });
     }
 
