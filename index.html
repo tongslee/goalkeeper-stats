@@ -318,6 +318,75 @@
       margin-top: 2px;
     }
 
+        /* Shot origin legend */
+    .origin-legend {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 4px 0 8px;
+      flex-wrap: wrap;
+    }
+
+    .origin-legend .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 4px;
+    }
+
+    .dot-6yd {
+      background: rgba(255, 100, 100, 0.9);   /* red */
+    }
+
+    .dot-18yd {
+      background: rgba(255, 255, 100, 0.9);   /* yellow */
+    }
+
+    .dot-corner {
+      background: rgba(100, 200, 100, 0.9);   /* green */
+    }
+
+    .dot-outside {
+      background: rgba(58, 160, 255, 0.9);    /* blue */
+    }
+
+    /* Shot Heatmap legend */
+    .heat-legend {
+      display: flex;
+      gap: 16px;
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .heat-legend div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid #1a2332;
+    }
+
+    .legend-box.outside {
+      background: rgb(110,110,140);
+    }
+
+    .legend-box.frame {
+      background: rgb(255,160,58);
+    }
+
+    .legend-box.goal {
+      background: rgb(58,160,255);
+    }
+    
     /* Summary */
     .bars {
       display: grid;
@@ -366,9 +435,13 @@
     .heat7 .hc span {
       position: absolute;
       inset: 0;
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       font-size: 12px;
+      line-height: 1.2;
       color: #cbd5e1;
       mix-blend-mode: screen;
     }
@@ -393,9 +466,13 @@
     .heat .hc span {
       position: absolute;
       inset: 0;
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
       font-size: 12px;
+      line-height: 1.2;
       color: #cbd5e1;
       mix-blend-mode: screen;
     }
@@ -448,6 +525,11 @@
       select,
       button {
         max-width: 100%;
+      }
+
+      /* smaller text in Shot Heatmap cells on tiny viewports */
+      .heat .hc span {
+        font-size: 9px;
       }
     }
 
@@ -687,14 +769,25 @@
           <div class="k">Save %</div>
         </div>
       </div>
-      <h3>Shot Origins</h3>
-      <div class="bars" id="origBars"></div>
       <h3>Shot Types</h3>
       <div class="stats shot-type-stats" id="shotTypeStats"></div>
+
       <h3>Shot Origin Heatmap</h3>
+      <div class="origin-legend small">
+        <span class="dot dot-6yd"></span> 6 yd box
+        <span class="dot dot-18yd"></span> 18 yd box
+        <span class="dot dot-corner"></span> Corner
+        <span class="dot dot-outside"></span> Outside
+      </div>
       <div class="heat7" id="originHeat"></div>
-      <h3>Heatmap</h3>
+
+      <h3>Shot Heatmap</h3>
       <div class="heat" id="heat"></div>
+      <div class="heat-legend small">
+        <div><span class="legend-box outside"></span> Outside</div>
+        <div><span class="legend-box frame"></span> Frame</div>
+        <div><span class="legend-box goal"></span> On Target</div>
+      </div>
 
       <!-- ✅ Export JSON button added -->
       <div class="stack">
@@ -1058,16 +1151,14 @@
     function buildOriginHeat(elId, events) {
       const el = document.getElementById(elId);
       el.innerHTML = '';
-    
+
       const rows = 3, cols = 7;
-    
-      // per-cell stats
+
       const savedCounts    = Array.from({ length: rows }, () => Array(cols).fill(0));
       const concededCounts = Array.from({ length: rows }, () => Array(cols).fill(0));
       const totalCounts    = Array.from({ length: rows }, () => Array(cols).fill(0));
       const posToLabel     = {};
-    
-      // Fallback mapping if some old events don’t have originPos
+
       const labelToFirstPos = {
         'Corner – L':    'r1c1',
         '18yd – LW':     'r1c2',
@@ -1085,68 +1176,61 @@
         'Outside – C':   'r3c4',
         'Outside – R':   'r3c5'
       };
-    
-      // Count events
+
       events.forEach(ev => {
         const label = ev.details?.origin || '';
         const pos = ev.details?.originPos || labelToFirstPos[label];
         if (!pos) return;
-    
-        const r = Number(pos[1]) - 1; // r1..r3 -> 0..2
-        const c = Number(pos[3]) - 1; // c1..c7 -> 0..6
+
+        const r = Number(pos[1]) - 1;
+        const c = Number(pos[3]) - 1;
         if (r < 0 || r >= rows || c < 0 || c >= cols) return;
-    
-        if (ev.result === 'Saved') savedCounts[r][c]++;
+
+        if (ev.result === 'Saved')    savedCounts[r][c]++;
         if (ev.result === 'Conceded') concededCounts[r][c]++;
-    
+
         if (ev.result === 'Saved' || ev.result === 'Conceded') {
           totalCounts[r][c]++;
           if (!posToLabel[pos]) posToLabel[pos] = label || pos;
         }
       });
-    
+
       const max = Math.max(1, ...totalCounts.flat());
-    
-      // helper to match grid color scheme
+
       const zoneRGBA = (r, c, alpha) => {
-        // 6-yard: row 1, cols 3–5
-        if (r === 0 && (c === 2 || c === 3 || c === 4)) return `rgba(255,100,100,${alpha})`;  // red
-        // 18-yard: row 1 cols 2 & 6 AND row 2 cols 2–6
+        if (r === 0 && (c === 2 || c === 3 || c === 4)) return `rgba(255,100,100,${alpha})`; // 6yd
         if ((r === 0 && (c === 1 || c === 5)) || (r === 1 && c >= 1 && c <= 5))
-          return `rgba(255,255,100,${alpha})`;                                               // yellow
-        // Corners: row 1 cols 1 & 7
-        if (r === 0 && (c === 0 || c === 6)) return `rgba(100,200,100,${alpha})`;            // green
-        // Outside: blue
-        return `rgba(58,160,255,${alpha})`;
+          return `rgba(255,255,100,${alpha})`;                                               // 18yd
+        if (r === 0 && (c === 0 || c === 6)) return `rgba(100,200,100,${alpha})`;           // corners
+        return `rgba(58,160,255,${alpha})`;                                                  // outside
       };
-    
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const total = totalCounts[r][c];
-          const saved = savedCounts[r][c];
+          const total    = totalCounts[r][c];
+          const saved    = savedCounts[r][c];
           const conceded = concededCounts[r][c];
-    
+
           const cell = document.createElement('div');
           cell.className = 'hc';
-    
-          const intensity = total / max;          // 0..1
-          const a = 0.12 + intensity * 0.60;      // opacity ramp
+
+          const intensity = total / max;
+          const a = 0.12 + intensity * 0.60;
           cell.style.background = zoneRGBA(r, c, a);
-    
+
           const span = document.createElement('span');
-    
           if (total > 0) {
             const pct = Math.round((saved / total) * 100);
-            span.textContent = pct + '%';
+            span.innerHTML = `${saved}/${conceded}<br>${pct}%`;
           } else {
             span.textContent = '';
           }
-    
-          const key = `r${r + 1}c${c + 1}`;
-          cell.dataset.label = posToLabel[key] || key;
-          cell.dataset.saved = saved;
+
+          const key = `r${r+1}c${c+1}`;
+          cell.dataset.label    = posToLabel[`r${r+1}c${c+1}`] || key;
+          cell.dataset.saved    = saved;
           cell.dataset.conceded = conceded;
-    
+
           cell.appendChild(span);
           el.appendChild(cell);
         }
@@ -1251,7 +1335,6 @@
       document.getElementById('tConceded').textContent = c;
       document.getElementById('tOff').textContent = o;
       document.getElementById('tSavePct').textContent = pct + '%';
-      buildBars('origBars', countBy(session.events, ev => ev.details.origin, ORIG_KEYS));
       buildShotTypeStats(session.events);
       buildOriginHeat('originHeat', session.events);
       buildHeat('heat', session.events);
@@ -1303,82 +1386,83 @@
     function buildHeat(id, events) {
       const el = document.getElementById(id);
       el.innerHTML = '';
-    
+
       const rows = 5, cols = 9;
-    
+
       const savedCount    = Array.from({ length: rows }, () => Array(cols).fill(0));
       const concededCount = Array.from({ length: rows }, () => Array(cols).fill(0));
       const totalCounts   = Array.from({ length: rows }, () => Array(cols).fill(0));
-    
-      const mapR = {
-        Over: 0,
-        'Top Bar': 1,
-        Top: 2,
-        Mid: 3,
-        Low: 4
-      };
+
+      const mapR = { Over:0, 'Top Bar':1, Top:2, Mid:3, Low:4 };
       const mapC = {
-        'Left Outside': 0,
-        'Left Post': 1,
-        'Left': 2,
-        'Left Center': 3,
-        'Center': 4,
-        'Right Center': 5,
-        'Right': 6,
-        'Right Post': 7,
-        'Right Outside': 8
+        'Left Outside':0,'Left Post':1,'Left':2,'Left Center':3,
+        'Center':4,'Right Center':5,'Right':6,'Right Post':7,'Right Outside':8
       };
-    
-      // Count events
+
       events.forEach(ev => {
         const loc = ev.details.location;
         if (!loc) return;
         const [row, col] = loc.split(' / ').map(s => s.trim());
-        const r = mapR[row];
-        const c = mapC[col];
+        const r = mapR[row], c = mapC[col];
         if (r == null || c == null) return;
-    
-        if (ev.result === 'Saved')   savedCount[r][c]++;
+
+        if (ev.result === 'Saved')    savedCount[r][c]++;
         if (ev.result === 'Conceded') concededCount[r][c]++;
-    
-        if (ev.result === 'Saved' || ev.result === 'Conceded') {
-          totalCounts[r][c]++;
-        }
+        if (ev.result === 'Saved' || ev.result === 'Conceded') totalCounts[r][c]++;
       });
-    
+
       const max = Math.max(1, ...totalCounts.flat());
-    
+
+      function getZone(r, c) {
+        const inGoal =
+          r >= 2 && r <= 4 &&      // Top, Mid, Low
+          c >= 2 && c <= 6;        // inside posts
+
+        if (inGoal) return 'goal';
+
+        const isCrossbar = (r === 1 && c >= 1 && c <= 7);
+        const isPosts    = ((c === 1 || c === 7) && r >= 2 && r <= 4);
+
+        if (isCrossbar || isPosts) return 'frame';
+
+        return 'outside';
+      }
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const total = totalCounts[r][c];
-          const saved = savedCount[r][c];
+          const total    = totalCounts[r][c];
+          const saved    = savedCount[r][c];
           const conceded = concededCount[r][c];
-    
+
           const d = document.createElement('div');
           d.className = 'hc';
-    
-          const isEdge = (c === 0 || c === 1 || c === 7 || c === 8 || r === 0 || r === 1);
+
+          const zone = getZone(r, c);
           const intensity = total / max;
           const a = 0.10 + intensity * 0.55;
-          d.style.background = isEdge
-            ? `rgba(255,160,58,${a})`
-            : `rgba(58,160,255,${a})`;
-    
+
+          let base;
+          if (zone === 'goal')      base = [58,160,255];  // on target
+          else if (zone === 'frame') base = [255,160,58]; // bar/posts
+          else                       base = [110,110,140]; // outside
+
+          d.style.background = `rgba(${base[0]},${base[1]},${base[2]},${a})`;
+
           const s = document.createElement('span');
-    
           if (total > 0) {
             const pct = Math.round((saved / total) * 100);
-            s.textContent = pct + '%';
+            s.innerHTML = `${saved}/${conceded}<br>${pct}%`;
           } else {
             s.textContent = '';
           }
-    
-          d.dataset.saved = saved;
+
+          d.dataset.saved    = saved;
           d.dataset.conceded = conceded;
-          d.dataset.label = `${['Over','Top Bar','Top','Mid','Low'][r]} / ${
-            ['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][c]
-          }`;
-    
+          d.dataset.label =
+            `${['Over','Top Bar','Top','Mid','Low'][r]} / ${
+              ['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][c]
+            }`;
+
           d.appendChild(s);
           el.appendChild(d);
         }
