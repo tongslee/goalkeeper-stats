@@ -328,7 +328,7 @@
       </div>
       <div class="heat7" id="originHeat"></div>
 
-      <h3>Heatmap</h3>
+      <h3>Shot Heatmap</h3>
       <div class="heat" id="heat"></div>
 
       <div class="small muted">
@@ -614,67 +614,97 @@
     }
 
     // --- Goal Location Heatmap – % saved per cell ---
+    // --- Shot Heatmap – inside goal vs frame vs outside ---
     function buildHeat(id, events) {
       const el = document.getElementById(id);
       el.innerHTML = '';
-
+    
       const rows = 5, cols = 9;
       const savedCount    = Array.from({ length: rows }, () => Array(cols).fill(0));
       const concededCount = Array.from({ length: rows }, () => Array(cols).fill(0));
       const totalCounts   = Array.from({ length: rows }, () => Array(cols).fill(0));
-
+    
       const mapR = { Over:0, 'Top Bar':1, Top:2, Mid:3, Low:4 };
       const mapC = {
         'Left Outside':0,'Left Post':1,'Left':2,'Left Center':3,
         'Center':4,'Right Center':5,'Right':6,'Right Post':7,'Right Outside':8
       };
-
+    
+      // Tally events into grid
       events.forEach(ev => {
         const loc = ev.details?.location;
         if (!loc) return;
         const [row, col] = loc.split(' / ').map(s => s.trim());
         const r = mapR[row], c = mapC[col];
         if (r == null || c == null) return;
-
+    
         if (ev.result === 'Saved')    savedCount[r][c]++;
         if (ev.result === 'Conceded') concededCount[r][c]++;
         if (ev.result === 'Saved' || ev.result === 'Conceded') totalCounts[r][c]++;
       });
-
+    
       const max = Math.max(1, ...totalCounts.flat());
-
+    
+      // helper: classify cell as goal / frame / outside
+      function getZone(r, c) {
+        // Inside goal mouth: rows Top, Mid, Low; cols Left..Right (no posts/outside)
+        const inGoal =
+          r >= 2 && r <= 4 &&   // Top, Mid, Low
+          c >= 2 && c <= 6;     // Left, Left Center, Center, Right Center, Right
+    
+        if (inGoal) return 'goal';
+    
+        // Goal frame: crossbar (Top Bar row) and posts (Left/Right Post cols)
+        const isCrossbar = (r === 1 && c >= 1 && c <= 7);          // Top Bar across posts
+        const isPosts    = ((c === 1 || c === 7) && r >= 2 && r <= 4); // vertical posts
+    
+        if (isCrossbar || isPosts) return 'frame';
+    
+        // Everything else = outside (over, left/right outside, etc.)
+        return 'outside';
+      }
+    
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const total = totalCounts[r][c];
-          const saved = savedCount[r][c];
-
+          const total    = totalCounts[r][c];
+          const saved    = savedCount[r][c];
+          const conceded = concededCount[r][c];
+    
           const d = document.createElement('div');
           d.className = 'hc';
-
-          const isEdge = (c === 0 || c === 1 || c === 7 || c === 8 || r === 0 || r === 1);
+    
+          const zone = getZone(r, c);
           const intensity = total / max;
           const a = 0.10 + intensity * 0.55;
-          d.style.background = isEdge
-            ? `rgba(255,160,58,${a})`
-            : `rgba(58,160,255,${a})`;
-
+    
+          // base colors for each zone
+          let base;
+          if (zone === 'goal') {
+            base = [58, 160, 255];       // blue: shots in the goal mouth
+          } else if (zone === 'frame') {
+            base = [255, 160, 58];       // orange: bar and posts
+          } else {
+            base = [110, 110, 140];      // muted purple/grey: outside the goal
+          }
+    
+          d.style.background = `rgba(${base[0]},${base[1]},${base[2]},${a})`;
+    
           const s = document.createElement('span');
-          
+    
           if (total > 0) {
             const pct = Math.round((saved / total) * 100);
-            const conceded = total - saved;
             s.innerHTML = `${saved}/${conceded}<br>${pct}%`;
           } else {
             s.textContent = '';
           }
-          
+    
           d.dataset.saved = saved;
-          d.dataset.conceded = total - saved;
+          d.dataset.conceded = conceded;
           d.dataset.label =
             `${['Over','Top Bar','Top','Mid','Low'][r]} / ${
               ['Left Outside','Left Post','Left','Left Center','Center','Right Center','Right','Right Post','Right Outside'][c]
             }`;
-          
+    
           d.appendChild(s);
           el.appendChild(d);
         }
