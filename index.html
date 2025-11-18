@@ -293,6 +293,31 @@
       color: var(--muted);
     }
 
+    /* Shot Type tiles (from history) */
+    .shot-type-stats {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    
+    @media (min-width: 640px) {
+      .shot-type-stats {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    .stat.muted-active {
+      background: #151d2a;
+      border-color: #24324a;
+    }
+    
+    .stat .sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
     /* Summary */
     .bars {
       display: grid;
@@ -665,7 +690,7 @@
       <h3>Shot Origins</h3>
       <div class="bars" id="origBars"></div>
       <h3>Shot Types</h3>
-      <div class="bars" id="typeBars"></div>
+      <div class="stats shot-type-stats" id="shotTypeStats"></div>
       <h3>Shot Origin Heatmap</h3>
       <div class="heat7" id="originHeat"></div>
       <h3>Heatmap</h3>
@@ -1165,6 +1190,57 @@
       document.getElementById('cSavePct').textContent = pct + '%';
     }
 
+    function buildShotTypeStats(events) {
+      const el = document.getElementById('shotTypeStats');
+      if (!el) return;
+      el.innerHTML = '';
+    
+      const stats = new Map();
+      events.forEach(ev => {
+        const key = ev.details?.shotType || '';
+        if (!stats.has(key)) {
+          stats.set(key, { total: 0, saved: 0, conceded: 0, off: 0 });
+        }
+        const s = stats.get(key);
+        s.total++;
+        if (ev.result === 'Saved') s.saved++;
+        else if (ev.result === 'Conceded') s.conceded++;
+        else if (ev.result === 'Off Target') s.off++;
+      });
+    
+      TYPE_KEYS.forEach(label => {
+        const s = stats.get(label) || { total: 0, saved: 0, conceded: 0, off: 0 };
+        const onTarget = s.saved + s.conceded;
+        const pct = onTarget ? Math.round((s.saved / onTarget) * 100) : 0;
+    
+        const card = document.createElement('div');
+        card.className = 'stat';
+        if (s.total > 0) card.classList.add('muted-active');
+    
+        card.dataset.label = label || 'Unspecified';
+        card.dataset.saved = s.saved;
+        card.dataset.conceded = s.conceded;
+        card.dataset.clickable = onTarget > 0 ? "1" : "0";
+    
+        const v = document.createElement('div');
+        v.className = 'v';
+        v.textContent = s.total;
+    
+        const k = document.createElement('div');
+        k.className = 'k';
+        k.textContent = label;
+    
+        const sub = document.createElement('div');
+        sub.className = 'sub';
+        sub.textContent = onTarget > 0 ? `${pct}% Save` : '';
+    
+        card.appendChild(v);
+        card.appendChild(k);
+        card.appendChild(sub);
+        el.appendChild(card);
+      });
+    }
+
     function showSummary() {
       const s = session.events.filter(e => e.result === 'Saved').length;
       const c = session.events.filter(e => e.result === 'Conceded').length;
@@ -1176,7 +1252,7 @@
       document.getElementById('tOff').textContent = o;
       document.getElementById('tSavePct').textContent = pct + '%';
       buildBars('origBars', countBy(session.events, ev => ev.details.origin, ORIG_KEYS));
-      buildBars('typeBars', countBy(session.events, ev => ev.details.shotType, TYPE_KEYS));
+      buildShotTypeStats(session.events);
       buildOriginHeat('originHeat', session.events);
       buildHeat('heat', session.events);
       show('screen-summary');
@@ -1341,6 +1417,12 @@
       document.querySelectorAll('#heat .hc').forEach(cell => {
         cell.addEventListener('click', handler);
       });
+
+      // Shot Type tiles
+      document.querySelectorAll('#shotTypeStats .stat[data-clickable="1"]')
+        .forEach(card => {
+          card.addEventListener('click', handler);
+        });
     
       close.addEventListener('click', () => modal.classList.remove('open'));
       modal.addEventListener('click', e => {
